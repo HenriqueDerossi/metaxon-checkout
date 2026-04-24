@@ -34,7 +34,7 @@ const APPEARANCE = {
       letterSpacing:  "0.08em",
       textTransform:  "uppercase",
     },
-    ".Tab": { border: "1px solid rgba(176,138,58,0.2)", color: "rgba(255,255,255,0.6)" },
+    ".Tab":          { border: "1px solid rgba(176,138,58,0.2)", color: "rgba(255,255,255,0.6)" },
     ".Tab--selected": { border: "1px solid #B08A3A", color: "#fff" },
   },
 };
@@ -75,24 +75,17 @@ function CountdownTimer() {
   const [time, setTime] = useState("23:59:59");
 
   useEffect(() => {
-    const KEY = "metaxon_timer_end";
-    const DURATION = 24 * 60 * 60 * 1000;
-    let end = parseInt(localStorage.getItem(KEY) || "0", 10);
-    if (!end || end < Date.now()) {
-      end = Date.now() + DURATION;
-      localStorage.setItem(KEY, String(end));
-    }
     const pad = (n: number) => String(n).padStart(2, "0");
+    const getMidnight = () => {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+    };
     const tick = () => {
-      const diff = Math.max(0, end - Date.now());
+      const diff = Math.max(0, getMidnight() - Date.now());
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
       setTime(`${pad(h)}:${pad(m)}:${pad(s)}`);
-      if (diff === 0) {
-        end = Date.now() + DURATION;
-        localStorage.setItem(KEY, String(end));
-      }
     };
     tick();
     const id = setInterval(tick, 1000);
@@ -101,30 +94,14 @@ function CountdownTimer() {
 
   return (
     <div style={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: "8px",
-      background: "#111",
-      border: "1px solid #c0392b",
-      borderRadius: "6px",
-      padding: "6px 14px",
+      display: "inline-flex", alignItems: "center", gap: "8px",
+      background: "#111", border: "1px solid #c0392b",
+      borderRadius: "6px", padding: "6px 14px",
     }}>
-      <span style={{
-        color: "#e74c3c",
-        fontSize: "10px",
-        fontWeight: "bold",
-        letterSpacing: "0.08em",
-        textTransform: "uppercase",
-      }}>
+      <span style={{ color: "#e74c3c", fontSize: "10px", fontWeight: "bold", letterSpacing: "0.08em", textTransform: "uppercase" }}>
         Offer expires in
       </span>
-      <span style={{
-        color: "#fff",
-        fontSize: "15px",
-        fontWeight: "bold",
-        fontFamily: "monospace",
-        letterSpacing: "0.12em",
-      }}>
+      <span style={{ color: "#fff", fontSize: "15px", fontWeight: "bold", fontFamily: "monospace", letterSpacing: "0.12em" }}>
         {time}
       </span>
     </div>
@@ -132,33 +109,30 @@ function CountdownTimer() {
 }
 
 export default function CheckoutPage() {
-  const [step, setStep]             = useState<"info" | "payment">("info");
-  const [name,  setName]            = useState("");
-  const [email, setEmail]           = useState("");
-  const [orderBump, setOrderBump]   = useState(false);
+  const [step, setStep]                 = useState<"info" | "payment">("info");
+  const [name, setName]                 = useState("");
+  const [email, setEmail]               = useState("");
+  const [orderBump, setOrderBump]       = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [customerId,   setCustomerId]   = useState<string>("");
-  const [loading, setLoading]       = useState(false);
-  const [error,   setError]         = useState<string | null>(null);
+  const [customerId, setCustomerId]     = useState<string>("");
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState<string | null>(null);
 
   const total = MAIN_PRICE + (orderBump ? ORDER_BUMP_PRICE : 0);
 
   const handleContinue = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) return;
-
     setLoading(true);
     setError(null);
-
     try {
       const res  = await fetch("/api/create-payment-intent", {
-        method:  "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ name, email, orderBump }),
+        body: JSON.stringify({ name, email, orderBump }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to initialize payment");
-
       setClientSecret(data.clientSecret);
       setCustomerId(data.customerId || "");
       setStep("payment");
@@ -205,8 +179,9 @@ export default function CheckoutPage() {
       {/* Main layout */}
       <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
 
-        {/* LEFT: Product Summary */}
+        {/* LEFT */}
         <div className="space-y-8 animate-fade-up">
+
           <div className="bg-ink border border-gold/20 rounded-lg p-6">
             <div className="flex items-baseline gap-4 mb-4">
               <span className="font-display text-5xl font-light text-white">$97</span>
@@ -280,15 +255,17 @@ export default function CheckoutPage() {
             For educational purposes only. Not medical advice. Individual results may vary.
             Consult a healthcare professional before beginning any supplementation program.
             <br /><br />
-            Questions? <a href="mailto:support@nsupplement.com" style={{ color: "#B08A3A" }}>support@nsupplement.com</a>
+            Questions?{" "}
+            <a href="mailto:support@nsupplement.com" style={{ color: "#B08A3A" }}>
+              support@nsupplement.com
+            </a>
           </p>
         </div>
 
-        {/* RIGHT: Order Form */}
+        {/* RIGHT */}
         <div className="lg:sticky lg:top-10 animate-fade-up delay-200">
           <div className="bg-ink border border-gold/20 rounded-xl p-7 shadow-2xl">
 
-            {/* Step indicator */}
             <div className="flex items-center gap-2 mb-6">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-body transition-colors ${step === "info" ? "bg-gold text-navy" : "bg-gold/20 text-gold"}`}>1</div>
               <div className="flex-1 h-px bg-gold/20" />
@@ -305,26 +282,18 @@ export default function CheckoutPage() {
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">First Name</label>
                   <input
-                    type="text"
-                    className="field-input"
-                    placeholder="Your first name"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    required
-                    autoComplete="given-name"
+                    type="text" className="field-input" placeholder="Your first name"
+                    value={name} onChange={e => setName(e.target.value)}
+                    required autoComplete="given-name"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">Email Address</label>
                   <input
-                    type="email"
-                    className="field-input"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
+                    type="email" className="field-input" placeholder="your@email.com"
+                    value={email} onChange={e => setEmail(e.target.value)}
+                    required autoComplete="email"
                   />
                   <p className="text-[11px] text-muted mt-1.5 font-body">Your access link will be sent here.</p>
                 </div>
@@ -333,9 +302,7 @@ export default function CheckoutPage() {
                 <div
                   onClick={() => setOrderBump(v => !v)}
                   className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
-                    orderBump
-                      ? "border-gold bg-gold/10"
-                      : "border-gold/30 bg-gold/5 hover:border-gold/60"
+                    orderBump ? "border-gold bg-gold/10" : "border-gold/30 bg-gold/5 hover:border-gold/60"
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -350,29 +317,22 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <p className="text-gold text-xs font-body font-semibold uppercase tracking-widest">
-                          Yes! Add to my order
-                        </p>
+                        <p className="text-gold text-xs font-body font-semibold uppercase tracking-widest">Yes! Add to my order</p>
                         <div className="flex items-center gap-1.5">
                           <span className="text-muted line-through text-xs font-body">$47</span>
                           <span className="text-gold font-semibold text-sm font-body">+$27</span>
                         </div>
                       </div>
-                      <p className="text-white text-sm font-body font-semibold mb-1">
-                        🌙 Deep Sleep Optimization Guide
-                      </p>
+                      <p className="text-white text-sm font-body font-semibold mb-1">🌙 Deep Sleep Optimization Guide</p>
                       <p className="text-muted text-xs font-body leading-relaxed">
                         The glymphatic system clears cognitive waste during deep sleep. This guide covers the exact protocols to maximize your slow-wave and REM cycles — the biological foundation of next-day focus.
                       </p>
                     </div>
                   </div>
                 </div>
-                {/* END ORDER BUMP */}
 
                 {error && (
-                  <div className="bg-red-900/30 border border-red-500/30 rounded px-4 py-3 text-red-300 text-sm">
-                    {error}
-                  </div>
+                  <div className="bg-red-900/30 border border-red-500/30 rounded px-4 py-3 text-red-300 text-sm">{error}</div>
                 )}
 
                 <button type="submit" className="btn-cta" disabled={loading || !name || !email}>
@@ -404,7 +364,6 @@ export default function CheckoutPage() {
               <p className="text-muted text-center py-8 font-body">Initializing...</p>
             )}
 
-            {/* Order summary */}
             <div className="mt-6 pt-5 border-t border-white/5">
               <div className="flex justify-between text-sm font-body mb-1">
                 <span className="text-muted">Metaxon™ Protocol</span>
@@ -428,14 +387,12 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Trust badges */}
           <div className="flex items-center justify-center gap-6 mt-5 flex-wrap">
             <TrustBadge icon="🔒" text="SSL Secured" />
             <TrustBadge icon="💳" text="Stripe Payments" />
             <TrustBadge icon="🛡" text="30-Day Guarantee" />
           </div>
 
-          {/* Support */}
           <p className="text-center text-[11px] text-muted font-body mt-4">
             Questions?{" "}
             <a href="mailto:support@nsupplement.com" className="text-gold hover:underline">
