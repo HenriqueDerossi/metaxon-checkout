@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "@/components/CheckoutForm";
@@ -71,6 +71,66 @@ const TESTIMONIALS = [
 const ORDER_BUMP_PRICE = 27;
 const MAIN_PRICE = 97;
 
+function CountdownTimer() {
+  const [time, setTime] = useState("23:59:59");
+
+  useEffect(() => {
+    const KEY = "metaxon_timer_end";
+    const DURATION = 24 * 60 * 60 * 1000;
+    let end = parseInt(localStorage.getItem(KEY) || "0", 10);
+    if (!end || end < Date.now()) {
+      end = Date.now() + DURATION;
+      localStorage.setItem(KEY, String(end));
+    }
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const tick = () => {
+      const diff = Math.max(0, end - Date.now());
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTime(`${pad(h)}:${pad(m)}:${pad(s)}`);
+      if (diff === 0) {
+        end = Date.now() + DURATION;
+        localStorage.setItem(KEY, String(end));
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+      background: "#111",
+      border: "1px solid #c0392b",
+      borderRadius: "6px",
+      padding: "6px 14px",
+    }}>
+      <span style={{
+        color: "#e74c3c",
+        fontSize: "10px",
+        fontWeight: "bold",
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+      }}>
+        Offer expires in
+      </span>
+      <span style={{
+        color: "#fff",
+        fontSize: "15px",
+        fontWeight: "bold",
+        fontFamily: "monospace",
+        letterSpacing: "0.12em",
+      }}>
+        {time}
+      </span>
+    </div>
+  );
+}
+
 export default function CheckoutPage() {
   const [step, setStep]             = useState<"info" | "payment">("info");
   const [name,  setName]            = useState("");
@@ -111,12 +171,25 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-navy relative z-10">
+
+      {/* Trust bar */}
       <div className="bg-ink border-b border-gold/10 py-2.5 px-4">
         <p className="text-center text-[11px] tracking-widest text-muted uppercase">
           🔒 &nbsp; Secure Checkout &nbsp;·&nbsp; 256-bit SSL Encryption &nbsp;·&nbsp; Powered by Stripe
         </p>
       </div>
 
+      {/* Countdown bar */}
+      <div style={{ background: "#0d1a28", borderBottom: "1px solid rgba(192,57,43,0.3)", padding: "8px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+          <span style={{ color: "#e74c3c", fontSize: "12px", fontWeight: "bold" }}>
+            ⚡ Launch pricing ends soon —
+          </span>
+          <CountdownTimer />
+        </div>
+      </div>
+
+      {/* Header */}
       <header className="py-8 px-4 text-center border-b border-gold/10 animate-fade-in">
         <div className="text-[11px] tracking-[0.3em] text-gold uppercase mb-2 font-body">
           Metaxon™ Protocol
@@ -129,8 +202,10 @@ export default function CheckoutPage() {
         </p>
       </header>
 
+      {/* Main layout */}
       <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
 
+        {/* LEFT: Product Summary */}
         <div className="space-y-8 animate-fade-up">
           <div className="bg-ink border border-gold/20 rounded-lg p-6">
             <div className="flex items-baseline gap-4 mb-4">
@@ -204,12 +279,16 @@ export default function CheckoutPage() {
           <p className="text-[11px] text-muted font-body leading-relaxed border-t border-white/5 pt-4">
             For educational purposes only. Not medical advice. Individual results may vary.
             Consult a healthcare professional before beginning any supplementation program.
+            <br /><br />
+            Questions? <a href="mailto:support@nsupplement.com" style={{ color: "#B08A3A" }}>support@nsupplement.com</a>
           </p>
         </div>
 
+        {/* RIGHT: Order Form */}
         <div className="lg:sticky lg:top-10 animate-fade-up delay-200">
           <div className="bg-ink border border-gold/20 rounded-xl p-7 shadow-2xl">
 
+            {/* Step indicator */}
             <div className="flex items-center gap-2 mb-6">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-body transition-colors ${step === "info" ? "bg-gold text-navy" : "bg-gold/20 text-gold"}`}>1</div>
               <div className="flex-1 h-px bg-gold/20" />
@@ -325,6 +404,7 @@ export default function CheckoutPage() {
               <p className="text-muted text-center py-8 font-body">Initializing...</p>
             )}
 
+            {/* Order summary */}
             <div className="mt-6 pt-5 border-t border-white/5">
               <div className="flex justify-between text-sm font-body mb-1">
                 <span className="text-muted">Metaxon™ Protocol</span>
@@ -348,11 +428,20 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          {/* Trust badges */}
           <div className="flex items-center justify-center gap-6 mt-5 flex-wrap">
             <TrustBadge icon="🔒" text="SSL Secured" />
             <TrustBadge icon="💳" text="Stripe Payments" />
             <TrustBadge icon="🛡" text="30-Day Guarantee" />
           </div>
+
+          {/* Support */}
+          <p className="text-center text-[11px] text-muted font-body mt-4">
+            Questions?{" "}
+            <a href="mailto:support@nsupplement.com" className="text-gold hover:underline">
+              support@nsupplement.com
+            </a>
+          </p>
         </div>
       </main>
     </div>
