@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "@/components/CheckoutForm";
@@ -10,31 +10,31 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 const APPEARANCE = {
   theme: "night" as const,
   variables: {
-    colorPrimary:        "#B08A3A",
-    colorBackground:     "#0f1e2e",
-    colorText:           "#ffffff",
-    colorDanger:         "#e74c3c",
-    fontFamily:          "'DM Sans', system-ui, sans-serif",
-    borderRadius:        "6px",
-    spacingUnit:         "4px",
+    colorPrimary:    "#B08A3A",
+    colorBackground: "#0f1e2e",
+    colorText:       "#ffffff",
+    colorDanger:     "#e74c3c",
+    fontFamily:      "'DM Sans', system-ui, sans-serif",
+    borderRadius:    "6px",
+    spacingUnit:     "4px",
   },
   rules: {
     ".Input": {
-      border:           "1px solid rgba(176,138,58,0.3)",
-      backgroundColor:  "rgba(255,255,255,0.05)",
-      color:            "#fff",
+      border:          "1px solid rgba(176,138,58,0.3)",
+      backgroundColor: "rgba(255,255,255,0.05)",
+      color:           "#fff",
     },
     ".Input:focus": {
       border:    "1px solid #B08A3A",
       boxShadow: "0 0 0 3px rgba(176,138,58,0.15)",
     },
     ".Label": {
-      color:          "rgba(255,255,255,0.6)",
-      fontSize:       "12px",
-      letterSpacing:  "0.08em",
-      textTransform:  "uppercase",
+      color:         "rgba(255,255,255,0.6)",
+      fontSize:      "12px",
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
     },
-    ".Tab": { border: "1px solid rgba(176,138,58,0.2)", color: "rgba(255,255,255,0.6)" },
+    ".Tab":           { border: "1px solid rgba(176,138,58,0.2)", color: "rgba(255,255,255,0.6)" },
     ".Tab--selected": { border: "1px solid #B08A3A", color: "#fff" },
   },
 };
@@ -69,18 +69,30 @@ const TESTIMONIALS = [
 ];
 
 const ORDER_BUMP_PRICE = 27;
-const MAIN_PRICE = 97;
+const MAIN_PRICE       = 97;
+
+// Maps API-level errors from create-payment-intent to friendly messages
+function getFriendlyApiError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("email"))          return "Please enter a valid email address.";
+  if (m.includes("name"))           return "Please enter your name.";
+  if (m.includes("network") || m.includes("fetch"))
+                                    return "Network error. Please check your connection and try again.";
+  if (m.includes("already") || m.includes("exists"))
+                                    return "An account with this email already exists. Please use a different email or contact support.";
+  return "Something went wrong. Please try again or contact support.";
+}
 
 export default function CheckoutPage() {
-  const [step, setStep]             = useState<"info" | "payment">("info");
-  const [name,  setName]            = useState("");
-  const [email, setEmail]           = useState("");
-  const [orderBump, setOrderBump]   = useState(false);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [customerId,   setCustomerId]   = useState<string>("");
-  const [countdown, setCountdown] = useState("23:59:59");
-  const [loading, setLoading]       = useState(false);
-  const [error,   setError]         = useState<string | null>(null);
+  const [step, setStep]   = useState<"info" | "payment">("info");
+  const [name,  setName]  = useState("");
+  const [email, setEmail] = useState("");
+  const [orderBump,     setOrderBump]     = useState(false);
+  const [clientSecret,  setClientSecret]  = useState<string | null>(null);
+  const [customerId,    setCustomerId]    = useState<string>("");
+  const [countdown,     setCountdown]     = useState("23:59:59");
+  const [loading,       setLoading]       = useState(false);
+  const [error,         setError]         = useState<string | null>(null);
 
   const total = MAIN_PRICE + (orderBump ? ORDER_BUMP_PRICE : 0);
 
@@ -104,7 +116,8 @@ export default function CheckoutPage() {
       setCustomerId(data.customerId || "");
       setStep("payment");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      const raw = err instanceof Error ? err.message : "Something went wrong.";
+      setError(getFriendlyApiError(raw));
     } finally {
       setLoading(false);
     }
@@ -121,11 +134,12 @@ export default function CheckoutPage() {
     }
     function setCookieVal(name: string, val: number) {
       const exp = new Date(val);
-      document.cookie = name + "=" + val
-        + ";domain=" + DOMAIN
-        + ";path=/"
-        + ";expires=" + exp.toUTCString()
-        + ";SameSite=Lax;Secure";
+      document.cookie =
+        name + "=" + val +
+        ";domain=" + DOMAIN +
+        ";path=/" +
+        ";expires=" + exp.toUTCString() +
+        ";SameSite=Lax;Secure";
     }
     function pad(n: number) { return n < 10 ? "0" + n : String(n); }
 
@@ -150,6 +164,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-navy relative z-10">
+
       {/* Trust bar */}
       <div className="bg-ink border-b border-gold/10 py-2.5 px-4">
         <p className="text-center text-[11px] tracking-widest text-muted uppercase">
@@ -157,7 +172,7 @@ export default function CheckoutPage() {
         </p>
       </div>
 
-      {/* Urgency timer bar — synced with landing page via cookie */}
+      {/* Urgency timer */}
       <div style={{ background: "#1a0a0a", borderBottom: "1px solid rgba(231,76,60,0.3)", padding: "7px 16px" }}>
         <p style={{ textAlign: "center", fontSize: "12px", fontFamily: "monospace", color: "rgba(255,255,255,0.85)", margin: 0 }}>
           <span style={{ color: "#e74c3c", fontWeight: "bold", letterSpacing: "0.05em" }}>⚡ LAUNCH PRICE EXPIRES IN &nbsp;</span>
@@ -201,7 +216,7 @@ export default function CheckoutPage() {
             <h3 className="font-display text-xl text-white mb-4 tracking-wide">What You Get</h3>
             <ul className="space-y-3">
               {BENEFITS.map((b, i) => (
-                <li key={i} className={`flex items-start gap-3 animate-fade-up delay-${(i+1)*100}`}>
+                <li key={i} className={`flex items-start gap-3 animate-fade-up delay-${(i + 1) * 100}`}>
                   <span className="text-lg flex-shrink-0 mt-0.5">{b.icon}</span>
                   <span className="text-white/80 text-sm font-body leading-relaxed">{b.text}</span>
                 </li>
@@ -231,7 +246,7 @@ export default function CheckoutPage() {
 
           <div className="space-y-4">
             {TESTIMONIALS.map((t, i) => (
-              <div key={i} className={`bg-ink border border-white/5 rounded-lg p-4 animate-fade-up delay-${(i+3)*100}`}>
+              <div key={i} className={`bg-ink border border-white/5 rounded-lg p-4 animate-fade-up delay-${(i + 3) * 100}`}>
                 <div className="flex gap-0.5 mb-2">
                   {Array.from({ length: t.stars }).map((_, s) => (
                     <span key={s} className="text-gold text-sm">★</span>
@@ -263,13 +278,19 @@ export default function CheckoutPage() {
         <div className="lg:sticky lg:top-10 animate-fade-up delay-200">
           <div className="bg-ink border border-gold/20 rounded-xl p-7 shadow-2xl">
 
+            {/* Step indicator */}
             <div className="flex items-center gap-2 mb-6">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-body transition-colors ${step === "info" ? "bg-gold text-navy" : "bg-gold/20 text-gold"}`}>1</div>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-body transition-colors ${
+                step === "info" ? "bg-gold text-navy" : "bg-gold/20 text-gold"
+              }`}>1</div>
               <div className="flex-1 h-px bg-gold/20" />
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-body transition-colors ${step === "payment" ? "bg-gold text-navy" : "bg-white/10 text-muted"}`}>2</div>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-body transition-colors ${
+                step === "payment" ? "bg-gold text-navy" : "bg-white/10 text-muted"
+              }`}>2</div>
             </div>
 
-            {step === "info" ? (
+            {/* STEP 1: Info */}
+            {step === "info" && (
               <form onSubmit={handleContinue} className="space-y-4">
                 <div>
                   <h2 className="font-display text-2xl font-light text-white mb-1">Your Information</h2>
@@ -277,7 +298,9 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">First Name</label>
+                  <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">
+                    First Name
+                  </label>
                   <input
                     type="text"
                     className="field-input"
@@ -290,7 +313,9 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">Email Address</label>
+                  <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">
+                    Email Address
+                  </label>
                   <input
                     type="email"
                     className="field-input"
@@ -300,13 +325,18 @@ export default function CheckoutPage() {
                     required
                     autoComplete="email"
                   />
-                  <p className="text-[11px] text-muted mt-1.5 font-body">Your access link will be sent here.</p>
+                  <p className="text-[11px] text-muted mt-1.5 font-body">
+                    Your access link will be sent here.
+                  </p>
                 </div>
 
+                {/* Order bump */}
                 <div
                   onClick={() => setOrderBump(v => !v)}
                   className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
-                    orderBump ? "border-gold bg-gold/10" : "border-gold/30 bg-gold/5 hover:border-gold/60"
+                    orderBump
+                      ? "border-gold bg-gold/10"
+                      : "border-gold/30 bg-gold/5 hover:border-gold/60"
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -315,19 +345,23 @@ export default function CheckoutPage() {
                     }`}>
                       {orderBump && (
                         <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
-                          <path d="M1 4L4.5 7.5L11 1" stroke="#0f1e2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M1 4L4.5 7.5L11 1" stroke="#0f1e2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       )}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <p className="text-gold text-xs font-body font-semibold uppercase tracking-widest">Yes! Add to my order</p>
+                        <p className="text-gold text-xs font-body font-semibold uppercase tracking-widest">
+                          Yes! Add to my order
+                        </p>
                         <div className="flex items-center gap-1.5">
                           <span className="text-muted line-through text-xs font-body">$47</span>
                           <span className="text-gold font-semibold text-sm font-body">+$27</span>
                         </div>
                       </div>
-                      <p className="text-white text-sm font-body font-semibold mb-1">🌙 Deep Sleep Optimization Guide</p>
+                      <p className="text-white text-sm font-body font-semibold mb-1">
+                        🌙 Deep Sleep Optimization Guide
+                      </p>
                       <p className="text-muted text-xs font-body leading-relaxed">
                         The glymphatic system clears cognitive waste during deep sleep. This guide covers the exact protocols to maximize your slow-wave and REM cycles — the biological foundation of next-day focus.
                       </p>
@@ -335,13 +369,23 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
+                {/* API-level error (e.g. network failure) */}
                 {error && (
-                  <div className="bg-red-900/30 border border-red-500/30 rounded px-4 py-3 text-red-300 text-sm">
-                    {error}
+                  <div className="bg-red-900/30 border border-red-500/40 rounded-lg px-4 py-3 flex items-start gap-2">
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="flex-shrink-0 mt-0.5" aria-hidden="true">
+                      <circle cx="7.5" cy="7.5" r="7" stroke="#f87171" strokeWidth="1.2" />
+                      <path d="M7.5 4.5v3.5" stroke="#f87171" strokeWidth="1.4" strokeLinecap="round" />
+                      <circle cx="7.5" cy="10.5" r=".8" fill="#f87171" />
+                    </svg>
+                    <p className="text-red-300 text-sm">{error}</p>
                   </div>
                 )}
 
-                <button type="submit" className="btn-cta" disabled={loading || !name || !email}>
+                <button
+                  type="submit"
+                  className="btn-cta"
+                  disabled={loading || !name.trim() || !email.trim()}
+                >
                   {loading ? "Please wait..." : `Continue to Payment → $${total}`}
                 </button>
 
@@ -349,8 +393,10 @@ export default function CheckoutPage() {
                   We collect only what&apos;s necessary. Your data is never sold.
                 </p>
               </form>
+            )}
 
-            ) : clientSecret ? (
+            {/* STEP 2: Payment */}
+            {step === "payment" && clientSecret && (
               <div>
                 <div className="mb-5">
                   <h2 className="font-display text-2xl font-light text-white mb-1">Payment Details</h2>
@@ -366,11 +412,13 @@ export default function CheckoutPage() {
                   ← Edit your information
                 </button>
               </div>
+            )}
 
-            ) : (
+            {step === "payment" && !clientSecret && (
               <p className="text-muted text-center py-8 font-body">Initializing...</p>
             )}
 
+            {/* Order summary */}
             <div className="mt-6 pt-5 border-t border-white/5">
               <div className="flex justify-between text-sm font-body mb-1">
                 <span className="text-muted">Metaxon™ Protocol</span>
