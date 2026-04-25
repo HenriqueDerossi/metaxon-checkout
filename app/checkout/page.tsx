@@ -40,7 +40,7 @@ const APPEARANCE = {
 };
 
 const BENEFITS = [
-  { icon: "⚡", text: "7 comprehensive modules delivered instantly" },
+  { icon: "⚡", text: "6 components delivered instantly" },
   { icon: "🧠", text: "Evidence-based neurobiological protocols" },
   { icon: "📅", text: "Structured 30-day implementation plan" },
   { icon: "✅", text: "Daily performance checklist included" },
@@ -71,15 +71,12 @@ const TESTIMONIALS = [
 const ORDER_BUMP_PRICE = 27;
 const MAIN_PRICE       = 97;
 
-// Maps API-level errors from create-payment-intent to friendly messages
 function getFriendlyApiError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes("email"))          return "Please enter a valid email address.";
-  if (m.includes("name"))           return "Please enter your name.";
-  if (m.includes("network") || m.includes("fetch"))
-                                    return "Network error. Please check your connection and try again.";
-  if (m.includes("already") || m.includes("exists"))
-                                    return "An account with this email already exists. Please use a different email or contact support.";
+  if (m.includes("email"))                            return "Please enter a valid email address.";
+  if (m.includes("name"))                             return "Please enter your name.";
+  if (m.includes("network") || m.includes("fetch"))   return "Network error. Please check your connection and try again.";
+  if (m.includes("already") || m.includes("exists"))  return "An account with this email already exists. Please use a different email or contact support.";
   return "Something went wrong. Please try again or contact support.";
 }
 
@@ -87,12 +84,12 @@ export default function CheckoutPage() {
   const [step, setStep]   = useState<"info" | "payment">("info");
   const [name,  setName]  = useState("");
   const [email, setEmail] = useState("");
-  const [orderBump,     setOrderBump]     = useState(false);
-  const [clientSecret,  setClientSecret]  = useState<string | null>(null);
-  const [customerId,    setCustomerId]    = useState<string>("");
-  const [countdown,     setCountdown]     = useState("23:59:59");
-  const [loading,       setLoading]       = useState(false);
-  const [error,         setError]         = useState<string | null>(null);
+  const [orderBump,    setOrderBump]    = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [customerId,   setCustomerId]   = useState<string>("");
+  const [countdown,    setCountdown]    = useState("23:59:59");
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState<string | null>(null);
 
   const total = MAIN_PRICE + (orderBump ? ORDER_BUMP_PRICE : 0);
 
@@ -240,7 +237,7 @@ export default function CheckoutPage() {
 
           <div className="text-center">
             <p className="text-muted text-xs font-body tracking-wider uppercase">
-              Trusted by <span className="text-gold font-semibold">2,000+ professionals</span> worldwide
+              Trusted by <span className="text-gold font-semibold">professionals worldwide</span>
             </p>
           </div>
 
@@ -266,6 +263,9 @@ export default function CheckoutPage() {
                 </div>
               </div>
             ))}
+            <p className="text-[11px] text-muted font-body text-center italic">
+              Results not typical. Individual results may vary.
+            </p>
           </div>
 
           <p className="text-[11px] text-muted font-body leading-relaxed border-t border-white/5 pt-4">
@@ -369,7 +369,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* API-level error (e.g. network failure) */}
+                {/* API error */}
                 {error && (
                   <div className="bg-red-900/30 border border-red-500/40 rounded-lg px-4 py-3 flex items-start gap-2">
                     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="flex-shrink-0 mt-0.5" aria-hidden="true">
@@ -422,18 +422,20 @@ export default function CheckoutPage() {
             <div className="mt-6 pt-5 border-t border-white/5">
               <div className="flex justify-between text-sm font-body mb-1">
                 <span className="text-muted">Metaxon™ Protocol</span>
-                <span className="text-white">$97.00</span>
+                <span className="text-white flex items-center gap-2">
+                  <span className="line-through text-muted text-xs">$297.00</span>
+                  $97.00
+                </span>
               </div>
               {orderBump && (
                 <div className="flex justify-between text-sm font-body mb-1">
                   <span className="text-muted">Deep Sleep Guide</span>
-                  <span className="text-white">$27.00</span>
+                  <span className="text-white flex items-center gap-2">
+                    <span className="line-through text-muted text-xs">$47.00</span>
+                    $27.00
+                  </span>
                 </div>
               )}
-              <div className="flex justify-between text-sm font-body">
-                <span className="text-muted">Discount applied</span>
-                <span className="text-green-400">-$200.00</span>
-              </div>
               <div className="gold-divider my-3" />
               <div className="flex justify-between font-body font-semibold">
                 <span className="text-white">Total</span>
