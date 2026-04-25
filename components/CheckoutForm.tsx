@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import {
-  useStripe, useElements, PaymentElement, StripePaymentElementOptions
+  useStripe, useElements, PaymentElement
 } from "@stripe/react-stripe-js";
-import type { StripeError } from "@stripe/stripe-js";
+import type { StripeError, StripePaymentElementOptions } from "@stripe/stripe-js";
 
 interface Props {
   name: string;
@@ -157,56 +157,3 @@ export default function CheckoutForm({ name, email, customerId }: Props) {
               <circle cx="7.5" cy="10.5" r=".8" fill="#f87171"/>
             </svg>
             {errorMsg}
-          </p>
-          {errorHint && (
-            <p className="text-red-400/80 text-xs pl-5">{errorHint}</p>
-          )}
-          {attempts >= 2 && (
-            <p className="text-yellow-400/80 text-xs pl-5 pt-2 border-t border-red-500/20 mt-1">
-              Still having trouble?{" "}
-              
-                href="mailto:support@nsupplement.com"
-                className="underline underline-offset-2 hover:text-yellow-300"
-              >
-                Contact our support
-              </a>{" "}
-              and we'll help you complete your order.
-            </p>
-          )}
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={!stripe || !elements || !ready || loading}
-        className="btn-cta mt-2"
-      >
-        {loading ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-            </svg>
-            Processing...
-          </span>
-        ) : attempts > 0 ? (
-          "Try Again"
-        ) : (
-          "Get Instant Access — $97"
-        )}
-      </button>
-
-      <p className="text-center text-xs text-muted leading-relaxed">
-        🔒 256-bit SSL Encryption &nbsp;·&nbsp; Powered by Stripe &nbsp;·&nbsp; Instant delivery
-      </p>
-
-      <div className="flex items-center justify-center gap-3 pt-1">
-        {["VISA", "MC", "AMEX", "DISC"].map((c) => (
-          <span key={c} className="text-[10px] font-bold tracking-wider border border-white/10 rounded px-2 py-1 text-muted">
-            {c}
-          </span>
-        ))}
-      </div>
-    </form>
-  );
-}
