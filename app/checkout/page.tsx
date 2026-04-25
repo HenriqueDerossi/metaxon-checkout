@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "@/components/CheckoutForm";
@@ -34,7 +34,7 @@ const APPEARANCE = {
       letterSpacing:  "0.08em",
       textTransform:  "uppercase",
     },
-    ".Tab":          { border: "1px solid rgba(176,138,58,0.2)", color: "rgba(255,255,255,0.6)" },
+    ".Tab": { border: "1px solid rgba(176,138,58,0.2)", color: "rgba(255,255,255,0.6)" },
     ".Tab--selected": { border: "1px solid #B08A3A", color: "#fff" },
   },
 };
@@ -71,68 +71,35 @@ const TESTIMONIALS = [
 const ORDER_BUMP_PRICE = 27;
 const MAIN_PRICE = 97;
 
-function CountdownTimer() {
-  const [time, setTime] = useState("23:59:59");
-
-  useEffect(() => {
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const getMidnight = () => {
-      const now = new Date();
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
-    };
-    const tick = () => {
-      const diff = Math.max(0, getMidnight() - Date.now());
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTime(`${pad(h)}:${pad(m)}:${pad(s)}`);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  return (
-    <div style={{
-      display: "inline-flex", alignItems: "center", gap: "8px",
-      background: "#111", border: "1px solid #c0392b",
-      borderRadius: "6px", padding: "6px 14px",
-    }}>
-      <span style={{ color: "#e74c3c", fontSize: "10px", fontWeight: "bold", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-        Offer expires in
-      </span>
-      <span style={{ color: "#fff", fontSize: "15px", fontWeight: "bold", fontFamily: "monospace", letterSpacing: "0.12em" }}>
-        {time}
-      </span>
-    </div>
-  );
-}
-
 export default function CheckoutPage() {
-  const [step, setStep]                 = useState<"info" | "payment">("info");
-  const [name, setName]                 = useState("");
-  const [email, setEmail]               = useState("");
-  const [orderBump, setOrderBump]       = useState(false);
+  const [step, setStep]             = useState<"info" | "payment">("info");
+  const [name,  setName]            = useState("");
+  const [email, setEmail]           = useState("");
+  const [orderBump, setOrderBump]   = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [customerId, setCustomerId]     = useState<string>("");
-  const [loading, setLoading]           = useState(false);
-  const [error, setError]               = useState<string | null>(null);
+  const [customerId,   setCustomerId]   = useState<string>("");
+  const [countdown, setCountdown] = useState("23:59:59");
+  const [loading, setLoading]       = useState(false);
+  const [error,   setError]         = useState<string | null>(null);
 
   const total = MAIN_PRICE + (orderBump ? ORDER_BUMP_PRICE : 0);
 
   const handleContinue = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) return;
+
     setLoading(true);
     setError(null);
+
     try {
       const res  = await fetch("/api/create-payment-intent", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, orderBump }),
+        body:    JSON.stringify({ name, email, orderBump }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to initialize payment");
+
       setClientSecret(data.clientSecret);
       setCustomerId(data.customerId || "");
       setStep("payment");
@@ -143,9 +110,46 @@ export default function CheckoutPage() {
     }
   }, [name, email, orderBump]);
 
+  useEffect(() => {
+    const COOKIE   = "mtx_exp";
+    const DOMAIN   = ".nsupplement.com";
+    const DURATION = 24 * 60 * 60 * 1000;
+
+    function getCookieVal(name: string): number {
+      const m = document.cookie.match("(^|;)\\s*" + name + "=([^;]+)");
+      return m ? parseInt(m[2], 10) : 0;
+    }
+    function setCookieVal(name: string, val: number) {
+      const exp = new Date(val);
+      document.cookie = name + "=" + val
+        + ";domain=" + DOMAIN
+        + ";path=/"
+        + ";expires=" + exp.toUTCString()
+        + ";SameSite=Lax;Secure";
+    }
+    function pad(n: number) { return n < 10 ? "0" + n : String(n); }
+
+    let expiry = getCookieVal(COOKIE);
+    if (!expiry || expiry < Date.now()) {
+      expiry = Date.now() + DURATION;
+      setCookieVal(COOKIE, expiry);
+    }
+
+    const tick = () => {
+      const diff = Math.max(0, expiry - Date.now());
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setCountdown(pad(h) + ":" + pad(m) + ":" + pad(s));
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div className="min-h-screen bg-navy relative z-10">
-
       {/* Trust bar */}
       <div className="bg-ink border-b border-gold/10 py-2.5 px-4">
         <p className="text-center text-[11px] tracking-widest text-muted uppercase">
@@ -153,14 +157,13 @@ export default function CheckoutPage() {
         </p>
       </div>
 
-      {/* Countdown bar */}
-      <div style={{ background: "#0d1a28", borderBottom: "1px solid rgba(192,57,43,0.3)", padding: "8px 16px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
-          <span style={{ color: "#e74c3c", fontSize: "12px", fontWeight: "bold" }}>
-            ⚡ Launch pricing ends soon —
-          </span>
-          <CountdownTimer />
-        </div>
+      {/* Urgency timer bar — synced with landing page via cookie */}
+      <div style={{ background: "#1a0a0a", borderBottom: "1px solid rgba(231,76,60,0.3)", padding: "7px 16px" }}>
+        <p style={{ textAlign: "center", fontSize: "12px", fontFamily: "monospace", color: "rgba(255,255,255,0.85)", margin: 0 }}>
+          <span style={{ color: "#e74c3c", fontWeight: "bold", letterSpacing: "0.05em" }}>⚡ LAUNCH PRICE EXPIRES IN &nbsp;</span>
+          <span style={{ color: "#fff", fontWeight: "bold", letterSpacing: "0.12em" }}>{countdown}</span>
+          <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "11px" }}> &nbsp;·&nbsp; Save $200 today</span>
+        </p>
       </div>
 
       {/* Header */}
@@ -179,9 +182,8 @@ export default function CheckoutPage() {
       {/* Main layout */}
       <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
 
-        {/* LEFT */}
+        {/* LEFT: Product Summary */}
         <div className="space-y-8 animate-fade-up">
-
           <div className="bg-ink border border-gold/20 rounded-lg p-6">
             <div className="flex items-baseline gap-4 mb-4">
               <span className="font-display text-5xl font-light text-white">$97</span>
@@ -199,7 +201,7 @@ export default function CheckoutPage() {
             <h3 className="font-display text-xl text-white mb-4 tracking-wide">What You Get</h3>
             <ul className="space-y-3">
               {BENEFITS.map((b, i) => (
-                <li key={i} className="flex items-start gap-3">
+                <li key={i} className={`flex items-start gap-3 animate-fade-up delay-${(i+1)*100}`}>
                   <span className="text-lg flex-shrink-0 mt-0.5">{b.icon}</span>
                   <span className="text-white/80 text-sm font-body leading-relaxed">{b.text}</span>
                 </li>
@@ -229,7 +231,7 @@ export default function CheckoutPage() {
 
           <div className="space-y-4">
             {TESTIMONIALS.map((t, i) => (
-              <div key={i} className="bg-ink border border-white/5 rounded-lg p-4">
+              <div key={i} className={`bg-ink border border-white/5 rounded-lg p-4 animate-fade-up delay-${(i+3)*100}`}>
                 <div className="flex gap-0.5 mb-2">
                   {Array.from({ length: t.stars }).map((_, s) => (
                     <span key={s} className="text-gold text-sm">★</span>
@@ -254,15 +256,10 @@ export default function CheckoutPage() {
           <p className="text-[11px] text-muted font-body leading-relaxed border-t border-white/5 pt-4">
             For educational purposes only. Not medical advice. Individual results may vary.
             Consult a healthcare professional before beginning any supplementation program.
-            <br /><br />
-            Questions?{" "}
-            <a href="mailto:support@nsupplement.com" style={{ color: "#B08A3A" }}>
-              support@nsupplement.com
-            </a>
           </p>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT: Order Form */}
         <div className="lg:sticky lg:top-10 animate-fade-up delay-200">
           <div className="bg-ink border border-gold/20 rounded-xl p-7 shadow-2xl">
 
@@ -282,23 +279,30 @@ export default function CheckoutPage() {
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">First Name</label>
                   <input
-                    type="text" className="field-input" placeholder="Your first name"
-                    value={name} onChange={e => setName(e.target.value)}
-                    required autoComplete="given-name"
+                    type="text"
+                    className="field-input"
+                    placeholder="Your first name"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    required
+                    autoComplete="given-name"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">Email Address</label>
                   <input
-                    type="email" className="field-input" placeholder="your@email.com"
-                    value={email} onChange={e => setEmail(e.target.value)}
-                    required autoComplete="email"
+                    type="email"
+                    className="field-input"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
                   />
                   <p className="text-[11px] text-muted mt-1.5 font-body">Your access link will be sent here.</p>
                 </div>
 
-                {/* ORDER BUMP */}
                 <div
                   onClick={() => setOrderBump(v => !v)}
                   className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
@@ -332,7 +336,9 @@ export default function CheckoutPage() {
                 </div>
 
                 {error && (
-                  <div className="bg-red-900/30 border border-red-500/30 rounded px-4 py-3 text-red-300 text-sm">{error}</div>
+                  <div className="bg-red-900/30 border border-red-500/30 rounded px-4 py-3 text-red-300 text-sm">
+                    {error}
+                  </div>
                 )}
 
                 <button type="submit" className="btn-cta" disabled={loading || !name || !email}>
@@ -360,6 +366,7 @@ export default function CheckoutPage() {
                   ← Edit your information
                 </button>
               </div>
+
             ) : (
               <p className="text-muted text-center py-8 font-body">Initializing...</p>
             )}
@@ -392,13 +399,6 @@ export default function CheckoutPage() {
             <TrustBadge icon="💳" text="Stripe Payments" />
             <TrustBadge icon="🛡" text="30-Day Guarantee" />
           </div>
-
-          <p className="text-center text-[11px] text-muted font-body mt-4">
-            Questions?{" "}
-            <a href="mailto:support@nsupplement.com" className="text-gold hover:underline">
-              support@nsupplement.com
-            </a>
-          </p>
         </div>
       </main>
     </div>
