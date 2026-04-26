@@ -40,11 +40,12 @@ const APPEARANCE = {
 };
 
 const BENEFITS = [
-  { icon: "🎯", text: "Restore deep focus — within the first week" },
-  { icon: "⚡", text: "Stabilize mental energy — no more afternoon crashes" },
-  { icon: "🧠", text: "Eliminate brain fog — clarity when it counts" },
-  { icon: "📈", text: "Improve decision-making — at your highest cognitive level" },
-  { icon: "🔄", text: "Build consistent high performance — automatically" },
+  { icon: "📖", label: "Component 1", text: "Metaxon™ Scientific Manual", sub: "7-chapter eBook · dosage tables · 20+ peer-reviewed references" },
+  { icon: "🧬", label: "Component 2", text: "Neurofunctional Compounds Guide", sub: "17 bioactive compounds · mechanism · optimal timing · 5 synergies" },
+  { icon: "📅", label: "Component 3", text: "30-Day Neurobiological Protocol", sub: "Step-by-step plan: Foundation → Stack → Full System → Automation" },
+  { icon: "✅", label: "Component 4", text: "Daily Performance Checklist", sub: "Daily tracker · compound logging · 6 cognitive metrics" },
+  { icon: "🗺", label: "Component 5", text: "Circadian Implementation Map", sub: "Full visual protocol · waking → wind-down · glymphatic optimization" },
+  { icon: "🧠", label: "Component 6", text: "Neuroplasticity Framework", sub: "3-phase consolidation model · conscious effort → automatic performance" },
 ];
 
 const TESTIMONIALS = [
@@ -135,7 +136,7 @@ export default function CheckoutPage() {
 
     const tick = () => {
       const now = Date.now();
-      if (now >= expiry) expiry = getNextNoon();
+      if (now >= expiry) expiry = getNextNoon(); // recalculate across midnight
       const diff = Math.max(0, expiry - now);
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
@@ -199,7 +200,7 @@ export default function CheckoutPage() {
           🔓 Unlock My Performance Now →
         </button>
         <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", fontFamily: "system-ui" }}>
-          🛡 7-day guarantee
+          🛡 30-day guarantee
         </span>
       </div>
 
@@ -237,7 +238,7 @@ export default function CheckoutPage() {
       {/* ── Main layout ───────────────────────────────────────── */}
       <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start" style={{ paddingBottom: "100px" }}>
 
-        {/* ── LEFT ─────────────────────────────────────────────── */}
+        {/* ── LEFT: Product Summary ─────────────────────────── */}
         <div className="space-y-7 animate-fade-up">
 
           {/* Price block */}
@@ -248,26 +249,50 @@ export default function CheckoutPage() {
             </div>
             <div className="flex items-baseline gap-4 mb-2">
               <span className="font-display text-5xl font-light text-white">$97</span>
-              <span className="bg-gold/15 text-gold text-xs font-body font-semibold px-2.5 py-1 rounded-full tracking-wide uppercase">Save 67% Today</span>
+              <span className="bg-gold/15 text-gold text-xs font-body font-semibold px-2.5 py-1 rounded-full tracking-wide uppercase">
+                Save 67% Today
+              </span>
             </div>
-            <p className="text-muted text-sm font-body leading-relaxed">One-time payment. Lifetime access. No subscription.</p>
+            <p className="text-muted text-sm font-body leading-relaxed">
+              One-time payment. Lifetime access. No subscription.
+            </p>
           </div>
 
-          {/* Emotional reinforcement */}
-          <div style={{ background: "rgba(176,138,58,0.06)", border: "1px solid rgba(176,138,58,0.2)", borderLeft: "4px solid #B08A3A", padding: "22px", borderRadius: "6px" }}>
-            <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.9)", lineHeight: "1.8", fontFamily: "system-ui", margin: 0 }}>This is where most people quit.</p>
-            <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.55)", lineHeight: "1.8", fontFamily: "system-ui", marginTop: "10px" }}>Not because it doesn&apos;t work —<br />but because they hesitate.</p>
-            <p style={{ fontSize: "15px", color: "#B08A3A", fontWeight: "bold", fontFamily: "system-ui", marginTop: "10px", lineHeight: "1.7" }}>The ones who move forward?<br />They&apos;re the ones who fix it.</p>
+          {/* EMOTIONAL REINFORCEMENT */}
+          <div style={{
+            background: "rgba(176,138,58,0.06)", border: "1px solid rgba(176,138,58,0.2)",
+            borderLeft: "4px solid #B08A3A", padding: "22px", borderRadius: "6px",
+          }}>
+            <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.9)", lineHeight: "1.8", fontFamily: "system-ui", margin: 0 }}>
+              This is where most people quit.
+            </p>
+            <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.55)", lineHeight: "1.8", fontFamily: "system-ui", marginTop: "10px" }}>
+              Not because it doesn&apos;t work —<br />but because they hesitate.
+            </p>
+            <p style={{ fontSize: "15px", color: "#B08A3A", fontWeight: "bold", fontFamily: "system-ui", marginTop: "10px", lineHeight: "1.7" }}>
+              The ones who move forward?<br />They&apos;re the ones who fix it.
+            </p>
           </div>
 
-          {/* Benefits */}
+          {/* 6 Components */}
           <div>
-            <h3 className="font-display text-xl text-white mb-4 tracking-wide">What You&apos;ll Experience</h3>
+            <h3 className="font-display text-xl text-white mb-1 tracking-wide">What You&apos;ll Receive</h3>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", fontFamily: "system-ui", marginBottom: "16px", fontStyle: "italic" }}>
+              6 components · instant digital access · fully in English
+            </p>
             <ul className="space-y-3">
               {BENEFITS.map((b, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <span className="text-lg flex-shrink-0 mt-0.5">{b.icon}</span>
-                  <span className="text-white/85 text-sm font-body leading-relaxed">{b.text}</span>
+                <li key={i} style={{
+                  display: "flex", gap: "14px", alignItems: "flex-start",
+                  background: "rgba(255,255,255,0.03)", border: "1px solid rgba(176,138,58,0.12)",
+                  borderLeft: "3px solid rgba(176,138,58,0.4)", padding: "12px 14px", borderRadius: "4px",
+                }}>
+                  <span style={{ fontSize: "20px", flexShrink: 0, marginTop: "1px" }}>{b.icon}</span>
+                  <div>
+                    <span style={{ fontSize: "9px", letterSpacing: "0.16em", textTransform: "uppercase", color: "#B08A3A", fontFamily: "system-ui", display: "block", marginBottom: "2px" }}>{b.label}</span>
+                    <span style={{ fontSize: "13px", fontWeight: "bold", color: "#fff", fontFamily: "system-ui", display: "block", marginBottom: "3px" }}>{b.text}</span>
+                    <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", fontFamily: "system-ui", lineHeight: "1.5" }}>{b.sub}</span>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -275,9 +300,14 @@ export default function CheckoutPage() {
 
           <div className="gold-divider" />
 
-          {/* Social proof strip */}
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", padding: "18px 20px" }}>
-            <p style={{ fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: "#B08A3A", fontFamily: "system-ui", marginBottom: "14px", textAlign: "center" }}>Trusted by high-performance professionals:</p>
+          {/* Aggressive social proof strip */}
+          <div style={{
+            background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "6px", padding: "18px 20px",
+          }}>
+            <p style={{ fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: "#B08A3A", fontFamily: "system-ui", marginBottom: "14px", textAlign: "center" }}>
+              Trusted by high-performance professionals:
+            </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {["My focus came back in 4 days.", "I stopped relying on caffeine.", "This actually works."].map((q, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -288,11 +318,16 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Guarantee */}
-          <div style={{ background: "rgba(39,174,96,0.07)", border: "2px solid rgba(39,174,96,0.3)", borderRadius: "8px", padding: "22px", display: "flex", gap: "16px", alignItems: "flex-start" }}>
+          {/* GUARANTEE — prominent */}
+          <div style={{
+            background: "rgba(39,174,96,0.07)", border: "2px solid rgba(39,174,96,0.3)",
+            borderRadius: "8px", padding: "22px", display: "flex", gap: "16px", alignItems: "flex-start",
+          }}>
             <div style={{ fontSize: "36px", flexShrink: 0 }}>🛡</div>
             <div>
-              <p style={{ color: "#27ae60", fontFamily: "system-ui", fontSize: "14px", fontWeight: "bold", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "8px" }}>Try it for 7 days.</p>
+              <p style={{ color: "#27ae60", fontFamily: "system-ui", fontSize: "14px", fontWeight: "bold", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "8px" }}>
+                Try it for 30 days.
+              </p>
               <p style={{ color: "rgba(255,255,255,0.75)", fontFamily: "system-ui", fontSize: "13px", lineHeight: "1.7", margin: 0 }}>
                 If you don&apos;t feel a real difference in your focus and energy,<br />
                 you get <strong style={{ color: "#fff" }}>100% of your money back.</strong><br />
@@ -310,11 +345,17 @@ export default function CheckoutPage() {
               {TESTIMONIALS.map((t, i) => (
                 <div key={i} className="bg-ink border border-white/5 rounded-lg p-4">
                   <div className="flex gap-0.5 mb-2">
-                    {Array.from({ length: t.stars }).map((_, s) => <span key={s} className="text-gold text-sm">★</span>)}
+                    {Array.from({ length: t.stars }).map((_, s) => (
+                      <span key={s} className="text-gold text-sm">★</span>
+                    ))}
                   </div>
-                  <p className="text-white/75 text-sm font-body leading-relaxed italic mb-3">&ldquo;{t.text}&rdquo;</p>
+                  <p className="text-white/75 text-sm font-body leading-relaxed italic mb-3">
+                    &ldquo;{t.text}&rdquo;
+                  </p>
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-gold/20 flex items-center justify-center text-gold text-xs font-semibold">{t.name[0]}</div>
+                    <div className="w-7 h-7 rounded-full bg-gold/20 flex items-center justify-center text-gold text-xs font-semibold">
+                      {t.name[0]}
+                    </div>
                     <div>
                       <p className="text-white text-xs font-semibold font-body">{t.name}</p>
                       <p className="text-muted text-[11px] font-body">{t.role}</p>
@@ -335,6 +376,7 @@ export default function CheckoutPage() {
         <div ref={formRef} className="lg:sticky lg:top-10 animate-fade-up delay-200">
           <div className="bg-ink border border-gold/20 rounded-xl p-7 shadow-2xl">
 
+            {/* Step indicator */}
             <div className="flex items-center gap-2 mb-6">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-body transition-colors ${step === "info" ? "bg-gold text-navy" : "bg-gold/20 text-gold"}`}>1</div>
               <div className="flex-1 h-px bg-gold/20" />
@@ -347,24 +389,35 @@ export default function CheckoutPage() {
                   <h2 className="font-display text-2xl font-light text-white mb-1">Your Information</h2>
                   <p className="text-muted text-sm font-body">Where should we send your access?</p>
                 </div>
+
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">First Name</label>
-                  <input type="text" className="field-input" placeholder="Your first name" value={name} onChange={e => setName(e.target.value)} required autoComplete="given-name" />
+                  <input type="text" className="field-input" placeholder="Your first name"
+                    value={name} onChange={e => setName(e.target.value)} required autoComplete="given-name" />
                 </div>
+
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">Email Address</label>
-                  <input type="email" className="field-input" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" />
+                  <input type="email" className="field-input" placeholder="your@email.com"
+                    value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" />
                   <p className="text-[11px] text-muted mt-1.5 font-body">Your access link will be sent here.</p>
                 </div>
 
-                {/* ORDER BUMP */}
-                <div onClick={() => setOrderBump(v => !v)} className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${orderBump ? "border-gold bg-gold/10" : "border-gold/30 bg-gold/5 hover:border-gold/60"}`}>
+                {/* ORDER BUMP — repositioned as "missing piece" */}
+                <div
+                  onClick={() => setOrderBump(v => !v)}
+                  className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${orderBump ? "border-gold bg-gold/10" : "border-gold/30 bg-gold/5 hover:border-gold/60"}`}
+                >
                   <p style={{ fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#e74c3c", fontFamily: "system-ui", fontWeight: "bold", marginBottom: "10px" }}>
                     ⚠ Add the missing piece of your performance system
                   </p>
                   <div className="flex items-start gap-3">
                     <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${orderBump ? "bg-gold border-gold" : "border-gold/40 bg-transparent"}`}>
-                      {orderBump && <svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4L4.5 7.5L11 1" stroke="#0f1e2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      {orderBump && (
+                        <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                          <path d="M1 4L4.5 7.5L11 1" stroke="#0f1e2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
@@ -382,10 +435,15 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {error && <div className="bg-red-900/30 border border-red-500/30 rounded px-4 py-3 text-red-300 text-sm">{error}</div>}
+                {error && (
+                  <div className="bg-red-900/30 border border-red-500/30 rounded px-4 py-3 text-red-300 text-sm">{error}</div>
+                )}
 
                 {/* PAYPAL NOTICE */}
-                <div style={{ background: "rgba(0,100,255,0.06)", border: "1px solid rgba(0,100,255,0.2)", borderRadius: "6px", padding: "10px 14px", display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{
+                  background: "rgba(0,100,255,0.06)", border: "1px solid rgba(0,100,255,0.2)",
+                  borderRadius: "6px", padding: "10px 14px", display: "flex", alignItems: "center", gap: "10px",
+                }}>
                   <span style={{ fontSize: "18px" }}>🅿</span>
                   <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)", fontFamily: "system-ui", margin: 0, lineHeight: "1.5" }}>
                     <strong style={{ color: "rgba(255,255,255,0.85)" }}>PayPal accepted</strong> — card, PayPal &amp; more available on the next screen.
@@ -395,8 +453,13 @@ export default function CheckoutPage() {
                 <button type="submit" className="btn-cta" disabled={loading || !name || !email}>
                   {loading ? "Please wait..." : `Unlock My Performance Now → $${total}`}
                 </button>
-                <p className="text-center text-xs text-muted font-body">⚡ Instant access. Takes less than 2 minutes.</p>
-                <p className="text-center text-xs text-muted font-body">We collect only what&apos;s necessary. Your data is never sold.</p>
+
+                <p className="text-center text-xs text-muted font-body">
+                  ⚡ Instant access. Takes less than 2 minutes.
+                </p>
+                <p className="text-center text-xs text-muted font-body">
+                  We collect only what&apos;s necessary. Your data is never sold.
+                </p>
               </form>
 
             ) : clientSecret ? (
@@ -404,7 +467,11 @@ export default function CheckoutPage() {
                 <div className="mb-5">
                   <h2 className="font-display text-2xl font-light text-white mb-1">Payment Details</h2>
                   <p className="text-muted text-sm font-body">Secure payment for {email}</p>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "10px", padding: "8px 12px", background: "rgba(0,100,255,0.06)", border: "1px solid rgba(0,100,255,0.18)", borderRadius: "5px" }}>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: "8px", marginTop: "10px",
+                    padding: "8px 12px", background: "rgba(0,100,255,0.06)",
+                    border: "1px solid rgba(0,100,255,0.18)", borderRadius: "5px",
+                  }}>
                     <span style={{ fontSize: "14px" }}>🅿</span>
                     <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", fontFamily: "system-ui" }}>
                       Select <strong style={{ color: "rgba(255,255,255,0.8)" }}>PayPal</strong> tab above the card fields to pay with PayPal
@@ -426,12 +493,18 @@ export default function CheckoutPage() {
             <div className="mt-6 pt-5 border-t border-white/5">
               <div className="flex justify-between text-sm font-body mb-1">
                 <span className="text-muted">Metaxon™ Performance System</span>
-                <span className="text-white flex items-center gap-2"><span className="line-through text-muted text-xs">$297.00</span>$97.00</span>
+                <span className="text-white flex items-center gap-2">
+                  <span className="line-through text-muted text-xs">$297.00</span>
+                  $97.00
+                </span>
               </div>
               {orderBump && (
                 <div className="flex justify-between text-sm font-body mb-1">
                   <span className="text-muted">Deep Sleep Guide</span>
-                  <span className="text-white flex items-center gap-2"><span className="line-through text-muted text-xs">$47.00</span>$27.00</span>
+                  <span className="text-white flex items-center gap-2">
+                    <span className="line-through text-muted text-xs">$47.00</span>
+                    $27.00
+                  </span>
                 </div>
               )}
               <div className="gold-divider my-3" />
@@ -442,11 +515,12 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          {/* Trust badges */}
           <div className="flex items-center justify-center gap-4 mt-5 flex-wrap">
             <TrustBadge icon="🔒" text="SSL Secured" />
             <TrustBadge icon="💳" text="Stripe Payments" />
             <TrustBadge icon="🅿" text="PayPal Accepted" />
-            <TrustBadge icon="🛡" text="7-Day Guarantee" />
+            <TrustBadge icon="🛡" text="30-Day Guarantee" />
           </div>
         </div>
       </main>
