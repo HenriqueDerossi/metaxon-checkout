@@ -231,7 +231,7 @@ export default function CheckoutPage() {
           You&apos;re one step away from restoring<br className="hidden md:block" /> your cognitive performance
         </h1>
         <p className="text-gold/80 text-sm md:text-base mt-2 font-body max-w-lg mx-auto">
-          Get instant access and start seeing changes in as little as 10 days
+          Get instant access and start seeing changes in as little as 30 days
         </p>
       </header>
 
@@ -283,7 +283,7 @@ export default function CheckoutPage() {
             {/* Product Mockup Image */}
             <div style={{ marginBottom: "16px", borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(176,138,58,0.2)" }}>
               <img
-                src="https://nsupplement.com/img/mockup-components.webp"
+                src="/mockup-components.webp"
                 alt="Metaxon™ System — 6 complete components"
                 loading="lazy"
                 decoding="async"
