@@ -231,7 +231,7 @@ export default function CheckoutPage() {
           You&apos;re one step away from restoring<br className="hidden md:block" /> your cognitive performance
         </h1>
         <p className="text-gold/80 text-sm md:text-base mt-2 font-body max-w-lg mx-auto">
-          Get instant access and start seeing changes in as little as 7 days
+          Get instant access and start seeing changes in as little as 10 days
         </p>
       </header>
 
@@ -277,9 +277,21 @@ export default function CheckoutPage() {
           {/* 6 Components */}
           <div>
             <h3 className="font-display text-xl text-white mb-1 tracking-wide">What You&apos;ll Receive</h3>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", fontFamily: "system-ui", marginBottom: "16px", fontStyle: "italic" }}>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", fontFamily: "system-ui", marginBottom: "12px", fontStyle: "italic" }}>
               6 components · instant digital access · fully in English
             </p>
+            {/* Product Mockup Image */}
+            <div style={{ marginBottom: "16px", borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(176,138,58,0.2)" }}>
+              <img
+                src="https://nsupplement.com/img/mockup-components.webp"
+                alt="Metaxon™ System — 6 complete components"
+                loading="lazy"
+                decoding="async"
+                width="1200"
+                height="800"
+                style={{ width: "100%", height: "auto", display: "block" }}
+              />
+            </div>
             <ul className="space-y-3">
               {BENEFITS.map((b, i) => (
                 <li key={i} style={{
