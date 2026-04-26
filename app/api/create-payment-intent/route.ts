@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 
-const MAIN_PRICE = 9700;  // $97.00
-const BUMP_PRICE = 2700;  // $27.00
+const MAIN_PRICE  = 9700;   // $97.00
+const BUMP_PRICE  = 2700;   // $27.00
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
 
     const amount = orderBump ? MAIN_PRICE + BUMP_PRICE : MAIN_PRICE;
 
+    // Find or create Stripe customer
     const existingCustomers = await stripe.customers.list({ email, limit: 1 });
     let customer = existingCustomers.data[0];
 
@@ -31,10 +32,10 @@ export async function POST(req: NextRequest) {
       customer: customer.id,
       receipt_email: email,
       metadata: {
-        product_type:   "main",
-        order_bump:     orderBump ? "true" : "false",
-        customer_email: email,
-        customer_name:  name,
+        product_type:     "main",
+        order_bump:       orderBump ? "true" : "false",
+        customer_email:   email,
+        customer_name:    name,
       },
       description,
       automatic_payment_methods: { enabled: true },

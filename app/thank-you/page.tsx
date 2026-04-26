@@ -54,10 +54,12 @@ function ThankYouContent() {
   const currency = "USD";
 
   useEffect(() => {
+    // 1. Inject Meta Pixel script if not already present
     if (typeof window === "undefined") return;
 
     const eventId = generateEventId();
 
+    // Init pixel
     if (!(window as any).fbq) {
       const script = document.createElement("script");
       script.innerHTML = `
@@ -77,6 +79,7 @@ function ThankYouContent() {
     const fbq = (window as any).fbq;
     if (!fbq) return;
 
+    // 2. Fire Purchase event — browser pixel
     fbq("track", "Purchase", {
       value,
       currency,
@@ -84,6 +87,7 @@ function ThankYouContent() {
       content_name: upsell ? "Metaxon™ Protocol + Sleep Guide" : "Metaxon™ Protocol",
     }, { eventID: eventId });
 
+    // 3. Fire Purchase event — CAPI (server-side, deduplicated via eventId)
     sendCAPI("Purchase", value, currency, eventId);
 
   }, [upsell, value]);
@@ -108,6 +112,7 @@ function ThankYouContent() {
 
   return (
     <div className="min-h-screen bg-navy relative z-10 flex flex-col">
+      {/* Pixel noscript fallback */}
       <noscript>
         <img
           height="1"
@@ -118,6 +123,7 @@ function ThankYouContent() {
         />
       </noscript>
 
+      {/* Top bar */}
       <div className="bg-ink border-b border-gold/10 py-2.5 px-4">
         <p className="text-center text-[11px] tracking-widest text-muted uppercase font-body">
           Metaxon™ Protocol
@@ -127,6 +133,7 @@ function ThankYouContent() {
       <div className="flex-1 flex items-center justify-center px-4 py-16">
         <div className="max-w-xl w-full text-center">
 
+          {/* Checkmark */}
           <div className="w-20 h-20 rounded-full bg-gold/10 border-2 border-gold/40 flex items-center justify-center mx-auto mb-8 animate-fade-in">
             <svg className="w-9 h-9 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -151,6 +158,7 @@ function ThankYouContent() {
             )}
           </div>
 
+          {/* Next steps */}
           <div className="mt-12 space-y-4 text-left animate-fade-up delay-200">
             <h2 className="font-display text-xl text-white text-center mb-6 tracking-wide">
               What Happens Next
@@ -168,6 +176,7 @@ function ThankYouContent() {
             ))}
           </div>
 
+          {/* Support */}
           <p className="text-muted text-xs font-body mt-10 leading-relaxed animate-fade-up delay-300">
             Questions? Email us at{" "}
             <a href="mailto:support@nsupplement.com" className="text-gold hover:underline">
