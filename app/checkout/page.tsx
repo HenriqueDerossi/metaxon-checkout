@@ -1,550 +1,339 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements } from "@stripe/react-stripe-js";
-import CheckoutForm from "@/components/CheckoutForm";
+import { useState, useEffect } from "react";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
-const APPEARANCE = {
-  theme: "night" as const,
-  variables: {
-    colorPrimary:        "#B08A3A",
-    colorBackground:     "#0f1e2e",
-    colorText:           "#ffffff",
-    colorDanger:         "#e74c3c",
-    fontFamily:          "'DM Sans', system-ui, sans-serif",
-    borderRadius:        "6px",
-    spacingUnit:         "4px",
-  },
-  rules: {
-    ".Input": {
-      border:           "1px solid rgba(176,138,58,0.3)",
-      backgroundColor:  "rgba(255,255,255,0.05)",
-      color:            "#fff",
-    },
-    ".Input:focus": {
-      border:    "1px solid #B08A3A",
-      boxShadow: "0 0 0 3px rgba(176,138,58,0.15)",
-    },
-    ".Label": {
-      color:          "rgba(255,255,255,0.6)",
-      fontSize:       "12px",
-      letterSpacing:  "0.08em",
-      textTransform:  "uppercase",
-    },
-    ".Tab": { border: "1px solid rgba(176,138,58,0.2)", color: "rgba(255,255,255,0.6)" },
-    ".Tab--selected": { border: "1px solid #B08A3A", color: "#fff" },
-  },
-};
-
-const BENEFITS = [
-  { icon: "📖", label: "Component 1", text: "Metaxon™ Scientific Manual", sub: "7-chapter eBook · dosage tables · 20+ peer-reviewed references" },
-  { icon: "🧬", label: "Component 2", text: "Neurofunctional Compounds Guide", sub: "17 bioactive compounds · mechanism · optimal timing · 5 synergies" },
-  { icon: "📅", label: "Component 3", text: "30-Day Neurobiological Protocol", sub: "Step-by-step plan: Foundation → Stack → Full System → Automation" },
-  { icon: "✅", label: "Component 4", text: "Daily Performance Checklist", sub: "Daily tracker · compound logging · 6 cognitive metrics" },
-  { icon: "🗺", label: "Component 5", text: "Circadian Implementation Map", sub: "Full visual protocol · waking → wind-down · glymphatic optimization" },
-  { icon: "🧠", label: "Component 6", text: "Neuroplasticity Framework", sub: "3-phase consolidation model · conscious effort → automatic performance" },
-];
-
-const TESTIMONIALS = [
-  {
-    name: "Marcus T.",
-    role: "Founder & CEO",
-    text: "I've tried dozens of productivity systems. Metaxon is the first one built on actual neuroscience. My focus improved noticeably in the first week.",
-    stars: 5,
-  },
-  {
-    name: "Dr. Sarah L.",
-    role: "Neurosurgeon",
-    text: "As a physician, I'm skeptical of performance protocols. This one is different — the compound science is legitimate and the protocols are actionable.",
-    stars: 5,
-  },
-  {
-    name: "James R.",
-    role: "Investment Banker",
-    text: "I work 70-hour weeks. This system helped me maintain peak cognitive output without burning out. Worth every dollar.",
-    stars: 5,
-  },
-];
-
-const ORDER_BUMP_PRICE = 27;
-const MAIN_PRICE = 97;
-
-export default function CheckoutPage() {
-  const [step, setStep]             = useState<"info" | "payment">("info");
-  const [name,  setName]            = useState("");
-  const [email, setEmail]           = useState("");
-  const [orderBump, setOrderBump]   = useState(false);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [customerId,   setCustomerId]   = useState<string>("");
-  const [countdown, setCountdown] = useState("23:59:59");
-  const [loading, setLoading]       = useState(false);
-  const [error,   setError]         = useState<string | null>(null);
-  const [showSticky, setShowSticky] = useState(false);
-  const formRef = useRef<HTMLDivElement>(null);
-
-  const total = MAIN_PRICE + (orderBump ? ORDER_BUMP_PRICE : 0);
-
+function useNoonCountdown() {
+  function getNextNoon(): number {
+    const now = new Date();
+    const noon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
+    if (now >= noon) noon.setDate(noon.getDate() + 1);
+    return noon.getTime();
+  }
+  const [timeStr, setTimeStr] = useState("--:--:--");
   useEffect(() => {
-    const onScroll = () => setShowSticky(window.scrollY > 300);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const scrollToForm = () => {
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const handleContinue = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res  = await fetch("/api/create-payment-intent", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ name, email, orderBump }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to initialize payment");
-      setClientSecret(data.clientSecret);
-      setCustomerId(data.customerId || "");
-      setStep("payment");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, [name, email, orderBump]);
-
-  // ── Countdown synced to 12:00 PM local time ─────────────────
-  // Always counts down to the next noon — same deadline for everyone.
-  useEffect(() => {
-    function getNextNoon(): number {
-      const now  = new Date();
-      const noon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
-      if (now >= noon) noon.setDate(noon.getDate() + 1); // past noon → tomorrow
-      return noon.getTime();
-    }
-
     let expiry = getNextNoon();
-
-    function pad(n: number) { return n < 10 ? "0" + n : String(n); }
-
+    const pad = (n: number) => String(n).padStart(2, "0");
     const tick = () => {
-      const now = Date.now();
-      if (now >= expiry) expiry = getNextNoon(); // recalculate across midnight
-      const diff = Math.max(0, expiry - now);
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setCountdown(pad(h) + ":" + pad(m) + ":" + pad(s));
+      if (Date.now() >= expiry) expiry = getNextNoon();
+      const diff = Math.max(0, expiry - Date.now());
+      setTimeStr(`${pad(Math.floor(diff/3600000))}:${pad(Math.floor((diff%3600000)/60000))}:${pad(Math.floor((diff%60000)/1000))}`);
     };
-
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
+  return timeStr;
+}
+
+const COMPONENTS = [
+  { icon: "📖", label: "Metaxon™ Scientific Manual", detail: "7-chapter eBook · dosage tables · 20+ peer-reviewed references" },
+  { icon: "🧬", label: "Neurofunctional Compounds Guide", detail: "17 bioactive compounds · mechanism · optimal timing" },
+  { icon: "📅", label: "30-Day Neurobiological Protocol", detail: "Foundation → Stack → Full System → Automation" },
+  { icon: "✅", label: "Daily Performance Checklist", detail: "Compound logging · 6 cognitive self-assessment metrics" },
+  { icon: "🗺", label: "Circadian Implementation Map", detail: "Full visual protocol · waking to wind-down" },
+  { icon: "🧠", label: "Neuroplasticity Framework", detail: "3-phase consolidation · effort → automatic performance" },
+];
+
+const REVIEWS = [
+  { text: "My focus came back in 4 days. I haven't had a productive streak like this in over a year.", name: "Marcus T.", role: "Founder & CEO, New York" },
+  { text: "I've been practicing medicine for 12 years. The compound science is legitimate and the protocols are actionable. Rare for this category.", name: "Dr. Sarah L.", role: "Internal Medicine Physician, Seattle" },
+  { text: "I work 70-hour weeks in finance. This system helped me maintain peak cognitive output without the crash. Worth every dollar.", name: "James R.", role: "Investment Banker, Chicago" },
+];
+
+export default function CheckoutPage() {
+  const [bumpAdded, setBumpAdded] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+  const countdown = useNoonCountdown();
+  const total = bumpAdded ? 144 : 97;
+
+  function validate() {
+    const e: { name?: string; email?: string } = {};
+    if (!firstName.trim()) e.name = "Please enter your first name.";
+    if (!email.trim()) e.email = "Please enter your email.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Please enter a valid email.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function handleSubmit() {
+    if (!validate()) return;
+    setLoading(true);
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq("track", "AddPaymentInfo", {
+        value: total, currency: "USD",
+        content_name: bumpAdded ? "Metaxon Protocol + Sleep Guide" : "Metaxon Protocol",
+      });
+    }
+    // ⚠️ Substitua pelos seus links reais do Stripe
+    const url = bumpAdded
+      ? "https://buy.stripe.com/REPLACE_BUMP_LINK"
+      : "https://buy.stripe.com/REPLACE_MAIN_LINK";
+    window.location.href = url;
+  }
+
+  const S = {
+    page: { background:"#FAFAF7", minHeight:"100vh", fontFamily:"Georgia,serif" } as React.CSSProperties,
+    topBar: { background:"#0D1B2A", height:52, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 24px", borderBottom:"2px solid #B08A3A" } as React.CSSProperties,
+    wrap: { maxWidth:620, margin:"0 auto", padding:"28px 20px 60px" } as React.CSSProperties,
+    card: { background:"#fff", border:"1px solid #EEE9DE", borderRadius:10, overflow:"hidden", marginBottom:20 } as React.CSSProperties,
+    cardBody: { padding:"16px 20px" } as React.CSSProperties,
+    label: { fontFamily:"Arial,sans-serif", fontSize:12, color:"#5A5A68", display:"block", marginBottom:5 } as React.CSSProperties,
+    input: (err: boolean) => ({ width:"100%", border:`1.5px solid ${err?"#C0392B":"#EEE9DE"}`, borderRadius:6, padding:"11px 14px", fontFamily:"Arial,sans-serif", fontSize:15, color:"#1A1A28", outline:"none", boxSizing:"border-box" }) as React.CSSProperties,
+    errMsg: { fontFamily:"Arial,sans-serif", fontSize:11, color:"#C0392B", marginTop:4 } as React.CSSProperties,
+    hint: { fontFamily:"Arial,sans-serif", fontSize:11, color:"#5A5A68", marginTop:4 } as React.CSSProperties,
+    sectionTitle: { fontFamily:"Arial,sans-serif", fontSize:11, fontWeight:"bold", letterSpacing:".14em", textTransform:"uppercase", color:"#1A4A7A", marginBottom:14, display:"flex", alignItems:"center", gap:8 } as React.CSSProperties,
+    btn: (disabled: boolean) => ({ width:"100%", background:disabled?"#999":"#1A4A7A", color:"#fff", fontFamily:"Arial,sans-serif", fontSize:18, fontWeight:"bold", letterSpacing:".04em", padding:"18px 24px", border:"none", borderRadius:8, cursor:disabled?"not-allowed":"pointer", boxShadow:"0 4px 18px rgba(26,74,122,.4)", display:"block", textAlign:"center" }) as React.CSSProperties,
+  };
 
   return (
-    <div className="min-h-screen bg-navy relative z-10">
+    <div style={S.page}>
 
-      {/* ── STICKY BOTTOM CTA ─────────────────────────────────── */}
-      <div style={{
-        position:   "fixed",
-        bottom:     0, left: 0, right: 0,
-        zIndex:     999,
-        padding:    "12px 20px",
-        background: "rgba(10,18,28,0.97)",
-        borderTop:  "1px solid rgba(176,138,58,0.3)",
-        backdropFilter: "blur(12px)",
-        display:    "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap:        "16px",
-        flexWrap:   "wrap",
-        transform:  showSticky ? "translateY(0)" : "translateY(110%)",
-        transition: "transform 0.35s ease",
-        boxShadow:  "0 -4px 32px rgba(0,0,0,0.5)",
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <span style={{ display: "block", fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", fontFamily: "system-ui", marginBottom: "2px" }}>
-            Today Only
-          </span>
-          <span style={{ fontFamily: "system-ui" }}>
-            <span style={{ fontSize: "12px", textDecoration: "line-through", color: "rgba(255,255,255,0.3)", marginRight: "6px" }}>$297</span>
-            <span style={{ fontSize: "15px", fontWeight: "bold", color: "#B08A3A" }}>$97</span>
-          </span>
-        </div>
-        <button
-          onClick={scrollToForm}
-          style={{
-            background:    "linear-gradient(135deg, #B08A3A, #D4AA60)",
-            color:         "#0a1218",
-            fontFamily:    "system-ui, sans-serif",
-            fontSize:      "14px",
-            fontWeight:    "bold",
-            letterSpacing: "0.04em",
-            padding:       "13px 36px",
-            border:        "none",
-            cursor:        "pointer",
-            flex:          "1",
-            maxWidth:      "360px",
-            transition:    "opacity 0.2s",
-            borderRadius:  "4px",
-          }}
-        >
-          🔓 Unlock My Performance Now →
-        </button>
-        <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", fontFamily: "system-ui" }}>
-          🛡 30-day guarantee
+      {/* TOP BAR */}
+      <header style={S.topBar}>
+        <span style={{ color:"#D4AA60", fontFamily:"Arial,sans-serif", fontWeight:"bold", fontSize:14, letterSpacing:".1em" }}>
+          METAXON™ PROTOCOL
         </span>
-      </div>
-
-      {/* ── Trust bar ─────────────────────────────────────────── */}
-      <div className="bg-ink border-b border-gold/10 py-2.5 px-4">
-        <p className="text-center text-[11px] tracking-widest text-muted uppercase">
-          🔒 &nbsp; Secure Checkout &nbsp;·&nbsp; 256-bit SSL &nbsp;·&nbsp; Stripe &amp; PayPal Accepted
-        </p>
-      </div>
-
-      {/* ── Urgency bar ───────────────────────────────────────── */}
-      <div style={{ background: "#1a0a0a", borderBottom: "1px solid rgba(231,76,60,0.3)", padding: "8px 16px" }}>
-        <p style={{ textAlign: "center", fontSize: "12px", fontFamily: "monospace", color: "rgba(255,255,255,0.85)", margin: 0 }}>
-          <span style={{ color: "#e74c3c", fontWeight: "bold" }}>⚡ &nbsp;</span>
-          <span style={{ color: "rgba(255,255,255,0.7)" }}>This price will </span>
-          <span style={{ color: "#fff", fontWeight: "bold" }}>not be available again</span>
-          <span style={{ color: "rgba(255,255,255,0.7)" }}> after this session &nbsp;—&nbsp; </span>
-          <span style={{ color: "#fff", fontWeight: "bold", letterSpacing: "0.12em" }}>{countdown}</span>
-        </p>
-      </div>
-
-      {/* ── Header ────────────────────────────────────────────── */}
-      <header className="py-8 px-4 text-center border-b border-gold/10 animate-fade-in">
-        <div className="text-[11px] tracking-[0.3em] text-gold uppercase mb-3 font-body">
-          Metaxon™ Performance System
-        </div>
-        <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-light text-white tracking-wide max-w-2xl mx-auto leading-tight mb-2">
-          You&apos;re one step away from restoring<br className="hidden md:block" /> your cognitive performance
-        </h1>
-        <p className="text-gold/80 text-sm md:text-base mt-2 font-body max-w-lg mx-auto">
-          Get instant access and start seeing changes in as little as 30 days
-        </p>
+        <span style={{ color:"rgba(255,255,255,.55)", fontFamily:"Arial,sans-serif", fontSize:12 }}>
+          🔒 Secure Checkout · 256-bit SSL
+        </span>
       </header>
 
-      {/* ── Main layout ───────────────────────────────────────── */}
-      <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start" style={{ paddingBottom: "100px" }}>
-
-        {/* ── LEFT: Product Summary ─────────────────────────── */}
-        <div className="space-y-7 animate-fade-up">
-
-          {/* Price block */}
-          <div className="bg-ink border border-gold/20 rounded-lg p-6">
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-              <span style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", fontFamily: "system-ui" }}>Total Value:</span>
-              <span style={{ fontSize: "16px", textDecoration: "line-through", color: "rgba(255,255,255,0.35)", fontFamily: "system-ui" }}>$297</span>
-            </div>
-            <div className="flex items-baseline gap-4 mb-2">
-              <span className="font-display text-5xl font-light text-white">$97</span>
-              <span className="bg-gold/15 text-gold text-xs font-body font-semibold px-2.5 py-1 rounded-full tracking-wide uppercase">
-                Save 67% Today
-              </span>
-            </div>
-            <p className="text-muted text-sm font-body leading-relaxed">
-              One-time payment. Lifetime access. No subscription.
-            </p>
-          </div>
-
-          {/* EMOTIONAL REINFORCEMENT */}
-          <div style={{
-            background: "rgba(176,138,58,0.06)", border: "1px solid rgba(176,138,58,0.2)",
-            borderLeft: "4px solid #B08A3A", padding: "22px", borderRadius: "6px",
-          }}>
-            <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.9)", lineHeight: "1.8", fontFamily: "system-ui", margin: 0 }}>
-              This is where most people quit.
-            </p>
-            <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.55)", lineHeight: "1.8", fontFamily: "system-ui", marginTop: "10px" }}>
-              Not because it doesn&apos;t work —<br />but because they hesitate.
-            </p>
-            <p style={{ fontSize: "15px", color: "#B08A3A", fontWeight: "bold", fontFamily: "system-ui", marginTop: "10px", lineHeight: "1.7" }}>
-              The ones who move forward?<br />They&apos;re the ones who fix it.
-            </p>
-          </div>
-
-          {/* 6 Components */}
-          <div>
-            <h3 className="font-display text-xl text-white mb-1 tracking-wide">What You&apos;ll Receive</h3>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", fontFamily: "system-ui", marginBottom: "12px", fontStyle: "italic" }}>
-              6 components · instant digital access · fully in English
-            </p>
-            {/* Product Mockup Image */}
-            <div style={{ marginBottom: "16px", borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(176,138,58,0.2)" }}>
-              <img
-                src="/mockup-components.webp"
-                alt="Metaxon™ System — 6 complete components"
-                loading="lazy"
-                decoding="async"
-                width="1200"
-                height="800"
-                style={{ width: "100%", height: "auto", display: "block" }}
-              />
-            </div>
-            <ul className="space-y-3">
-              {BENEFITS.map((b, i) => (
-                <li key={i} style={{
-                  display: "flex", gap: "14px", alignItems: "flex-start",
-                  background: "rgba(255,255,255,0.03)", border: "1px solid rgba(176,138,58,0.12)",
-                  borderLeft: "3px solid rgba(176,138,58,0.4)", padding: "12px 14px", borderRadius: "4px",
-                }}>
-                  <span style={{ fontSize: "20px", flexShrink: 0, marginTop: "1px" }}>{b.icon}</span>
-                  <div>
-                    <span style={{ fontSize: "9px", letterSpacing: "0.16em", textTransform: "uppercase", color: "#B08A3A", fontFamily: "system-ui", display: "block", marginBottom: "2px" }}>{b.label}</span>
-                    <span style={{ fontSize: "13px", fontWeight: "bold", color: "#fff", fontFamily: "system-ui", display: "block", marginBottom: "3px" }}>{b.text}</span>
-                    <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", fontFamily: "system-ui", lineHeight: "1.5" }}>{b.sub}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="gold-divider" />
-
-          {/* Aggressive social proof strip */}
-          <div style={{
-            background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: "6px", padding: "18px 20px",
-          }}>
-            <p style={{ fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: "#B08A3A", fontFamily: "system-ui", marginBottom: "14px", textAlign: "center" }}>
-              Trusted by high-performance professionals:
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {["My focus came back in 4 days.", "I stopped relying on caffeine.", "This actually works."].map((q, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ color: "#B08A3A", fontSize: "13px" }}>★</span>
-                  <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.8)", fontFamily: "system-ui", fontStyle: "italic" }}>&ldquo;{q}&rdquo;</span>
+      {/* PROGRESS */}
+      <div style={{ background:"#E8EFF6", padding:"12px 24px" }}>
+        <div style={{ maxWidth:600, margin:"0 auto", display:"flex", alignItems:"center" }}>
+          {["Order","Checkout","Access"].map((step, i) => {
+            const isDone = i===0, isActive = i===1;
+            return (
+              <div key={step} style={{ flex:1, textAlign:"center", position:"relative" }}>
+                {i < 2 && <div style={{ position:"absolute", top:14, left:"50%", width:"100%", height:2, background:isDone?"#1a7a3a":"#EEE9DE", zIndex:0 }} />}
+                <div style={{ width:28, height:28, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif", fontSize:12, fontWeight:"bold", position:"relative", zIndex:1, margin:"0 auto 4px", background:isDone?"#1a7a3a":isActive?"#1A4A7A":"#EEE9DE", color:(!isDone&&!isActive)?"#5A5A68":"#fff" }}>
+                  {isDone ? "✓" : i+1}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* GUARANTEE — prominent */}
-          <div style={{
-            background: "rgba(39,174,96,0.07)", border: "2px solid rgba(39,174,96,0.3)",
-            borderRadius: "8px", padding: "22px", display: "flex", gap: "16px", alignItems: "flex-start",
-          }}>
-            <div style={{ fontSize: "36px", flexShrink: 0 }}>🛡</div>
-            <div>
-              <p style={{ color: "#27ae60", fontFamily: "system-ui", fontSize: "14px", fontWeight: "bold", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "8px" }}>
-                Try it for 30 days.
-              </p>
-              <p style={{ color: "rgba(255,255,255,0.75)", fontFamily: "system-ui", fontSize: "13px", lineHeight: "1.7", margin: 0 }}>
-                If you don&apos;t feel a real difference in your focus and energy,<br />
-                you get <strong style={{ color: "#fff" }}>100% of your money back.</strong><br />
-                No questions asked.
-              </p>
-            </div>
-          </div>
-
-          {/* Testimonials */}
-          <div>
-            <p className="text-center text-muted text-xs font-body tracking-wider uppercase mb-4">
-              Trusted by <span className="text-gold font-semibold">2,000+ professionals</span> worldwide
-            </p>
-            <div className="space-y-4">
-              {TESTIMONIALS.map((t, i) => (
-                <div key={i} className="bg-ink border border-white/5 rounded-lg p-4">
-                  <div className="flex gap-0.5 mb-2">
-                    {Array.from({ length: t.stars }).map((_, s) => (
-                      <span key={s} className="text-gold text-sm">★</span>
-                    ))}
-                  </div>
-                  <p className="text-white/75 text-sm font-body leading-relaxed italic mb-3">
-                    &ldquo;{t.text}&rdquo;
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-gold/20 flex items-center justify-center text-gold text-xs font-semibold">
-                      {t.name[0]}
-                    </div>
-                    <div>
-                      <p className="text-white text-xs font-semibold font-body">{t.name}</p>
-                      <p className="text-muted text-[11px] font-body">{t.role}</p>
-                    </div>
-                  </div>
+                <div style={{ fontFamily:"Arial,sans-serif", fontSize:10, letterSpacing:".08em", textTransform:"uppercase", color:isActive?"#1A4A7A":"#5A5A68", fontWeight:isActive?"bold":"normal" }}>
+                  {step}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
-          <p className="text-[11px] text-muted font-body leading-relaxed border-t border-white/5 pt-4">
-            For educational purposes only. Not medical advice. Individual results may vary.
-            Consult a healthcare professional before beginning any supplementation program.
+      <div style={S.wrap}>
+
+        {/* HEADLINE */}
+        <div style={{ textAlign:"center", marginBottom:24 }}>
+          <span style={{ fontFamily:"Arial,sans-serif", fontSize:11, letterSpacing:".2em", textTransform:"uppercase", color:"#1A4A7A", display:"block", marginBottom:6 }}>
+            Metaxon™ Performance System
+          </span>
+          <h1 style={{ fontSize:"clamp(20px,4vw,28px)", fontWeight:"bold", color:"#0D1B2A", lineHeight:1.25, marginBottom:8 }}>
+            You're one step away from restoring your cognitive performance
+          </h1>
+          <p style={{ fontFamily:"Arial,sans-serif", fontSize:14, color:"#5A5A68", fontStyle:"italic" }}>
+            Get instant access and start seeing changes in as little as 7 days
           </p>
         </div>
 
-        {/* ── RIGHT: Order Form ─────────────────────────────── */}
-        <div ref={formRef} className="lg:sticky lg:top-10 animate-fade-up delay-200">
-          <div className="bg-ink border border-gold/20 rounded-xl p-7 shadow-2xl">
+        {/* COUNTDOWN */}
+        <div style={{ background:"#0D1B2A", display:"flex", alignItems:"center", justifyContent:"center", gap:14, padding:"12px 20px", marginBottom:20, borderRadius:6, flexWrap:"wrap" }}>
+          <span style={{ fontFamily:"Arial,sans-serif", fontSize:11, color:"rgba(255,255,255,.5)", letterSpacing:".08em" }}>LAUNCH PRICE EXPIRES IN</span>
+          <span style={{ fontFamily:"monospace", fontSize:20, fontWeight:"bold", color:"#fff", letterSpacing:".1em" }}>{countdown}</span>
+          <span style={{ fontFamily:"Arial,sans-serif", fontSize:13, color:"#D4AA60", fontWeight:"bold" }}>$97 (reg. $297)</span>
+        </div>
 
-            {/* Step indicator */}
-            <div className="flex items-center gap-2 mb-6">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-body transition-colors ${step === "info" ? "bg-gold text-navy" : "bg-gold/20 text-gold"}`}>1</div>
-              <div className="flex-1 h-px bg-gold/20" />
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-body transition-colors ${step === "payment" ? "bg-gold text-navy" : "bg-white/10 text-muted"}`}>2</div>
+        {/* TRUST STRIP */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:20 }}>
+          {[{icon:"🔒",t:"256-bit SSL",s:"Encrypted"},{icon:"💳",t:"Stripe",s:"Card · Apple Pay"},{icon:"🅿",t:"PayPal",s:"Accepted"},{icon:"🛡",t:"30-Day Guarantee",s:"Full refund"}].map(({icon,t,s})=>(
+            <div key={t} style={{ background:"#fff", border:"1px solid #EEE9DE", borderRadius:8, padding:"10px 8px", textAlign:"center" }}>
+              <div style={{ fontSize:20, marginBottom:3 }}>{icon}</div>
+              <span style={{ fontFamily:"Arial,sans-serif", fontSize:11, fontWeight:"bold", color:"#0D1B2A", display:"block" }}>{t}</span>
+              <span style={{ fontFamily:"Arial,sans-serif", fontSize:10, color:"#5A5A68" }}>{s}</span>
             </div>
+          ))}
+        </div>
 
-            {step === "info" ? (
-              <form onSubmit={handleContinue} className="space-y-4">
-                <div>
-                  <h2 className="font-display text-2xl font-light text-white mb-1">Your Information</h2>
-                  <p className="text-muted text-sm font-body">Where should we send your access?</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">First Name</label>
-                  <input type="text" className="field-input" placeholder="Your first name"
-                    value={name} onChange={e => setName(e.target.value)} required autoComplete="given-name" />
-                </div>
-
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-gold mb-2 font-body">Email Address</label>
-                  <input type="email" className="field-input" placeholder="your@email.com"
-                    value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" />
-                  <p className="text-[11px] text-muted mt-1.5 font-body">Your access link will be sent here.</p>
-                </div>
-
-                {/* ORDER BUMP — repositioned as "missing piece" */}
-                <div
-                  onClick={() => setOrderBump(v => !v)}
-                  className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${orderBump ? "border-gold bg-gold/10" : "border-gold/30 bg-gold/5 hover:border-gold/60"}`}
-                >
-                  <p style={{ fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#e74c3c", fontFamily: "system-ui", fontWeight: "bold", marginBottom: "10px" }}>
-                    ⚠ Add the missing piece of your performance system
-                  </p>
-                  <div className="flex items-start gap-3">
-                    <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${orderBump ? "bg-gold border-gold" : "border-gold/40 bg-transparent"}`}>
-                      {orderBump && (
-                        <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
-                          <path d="M1 4L4.5 7.5L11 1" stroke="#0f1e2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-gold text-xs font-body font-semibold uppercase tracking-widest">Yes! Add to my order</p>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-muted line-through text-xs font-body">$47</span>
-                          <span className="text-gold font-semibold text-sm font-body">+$27</span>
-                        </div>
-                      </div>
-                      <p className="text-white text-sm font-body font-semibold mb-1">🌙 Deep Sleep Optimization Guide</p>
-                      <p className="text-muted text-xs font-body leading-relaxed">
-                        Without deep sleep, your brain cannot reset. This guide ensures the system actually works at full capacity — maximizing slow-wave and REM cycles, the biological foundation of next-day focus.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="bg-red-900/30 border border-red-500/30 rounded px-4 py-3 text-red-300 text-sm">{error}</div>
-                )}
-
-                {/* PAYPAL NOTICE */}
-                <div style={{
-                  background: "rgba(0,100,255,0.06)", border: "1px solid rgba(0,100,255,0.2)",
-                  borderRadius: "6px", padding: "10px 14px", display: "flex", alignItems: "center", gap: "10px",
-                }}>
-                  <span style={{ fontSize: "18px" }}>🅿</span>
-                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)", fontFamily: "system-ui", margin: 0, lineHeight: "1.5" }}>
-                    <strong style={{ color: "rgba(255,255,255,0.85)" }}>PayPal accepted</strong> — card, PayPal &amp; more available on the next screen.
-                  </p>
-                </div>
-
-                <button type="submit" className="btn-cta" disabled={loading || !name || !email}>
-                  {loading ? "Please wait..." : `Unlock My Performance Now → $${total}`}
-                </button>
-
-                <p className="text-center text-xs text-muted font-body">
-                  ⚡ Instant access. Takes less than 2 minutes.
-                </p>
-                <p className="text-center text-xs text-muted font-body">
-                  We collect only what&apos;s necessary. Your data is never sold.
-                </p>
-              </form>
-
-            ) : clientSecret ? (
-              <div>
-                <div className="mb-5">
-                  <h2 className="font-display text-2xl font-light text-white mb-1">Payment Details</h2>
-                  <p className="text-muted text-sm font-body">Secure payment for {email}</p>
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: "8px", marginTop: "10px",
-                    padding: "8px 12px", background: "rgba(0,100,255,0.06)",
-                    border: "1px solid rgba(0,100,255,0.18)", borderRadius: "5px",
-                  }}>
-                    <span style={{ fontSize: "14px" }}>🅿</span>
-                    <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", fontFamily: "system-ui" }}>
-                      Select <strong style={{ color: "rgba(255,255,255,0.8)" }}>PayPal</strong> tab above the card fields to pay with PayPal
-                    </span>
-                  </div>
-                </div>
-                <Elements stripe={stripePromise} options={{ clientSecret, appearance: APPEARANCE }}>
-                  <CheckoutForm name={name} email={email} customerId={customerId} />
-                </Elements>
-                <button onClick={() => setStep("info")} className="mt-4 text-xs text-muted hover:text-white transition-colors font-body w-full text-center">
-                  ← Edit your information
-                </button>
-              </div>
-            ) : (
-              <p className="text-muted text-center py-8 font-body">Initializing...</p>
-            )}
-
-            {/* Order summary */}
-            <div className="mt-6 pt-5 border-t border-white/5">
-              <div className="flex justify-between text-sm font-body mb-1">
-                <span className="text-muted">Metaxon™ Performance System</span>
-                <span className="text-white flex items-center gap-2">
-                  <span className="line-through text-muted text-xs">$297.00</span>
-                  $97.00
-                </span>
-              </div>
-              {orderBump && (
-                <div className="flex justify-between text-sm font-body mb-1">
-                  <span className="text-muted">Deep Sleep Guide</span>
-                  <span className="text-white flex items-center gap-2">
-                    <span className="line-through text-muted text-xs">$47.00</span>
-                    $27.00
-                  </span>
-                </div>
-              )}
-              <div className="gold-divider my-3" />
-              <div className="flex justify-between font-body font-semibold">
-                <span className="text-white">Total</span>
-                <span className="text-gold text-lg">${total}.00</span>
-              </div>
+        {/* ORDER SUMMARY */}
+        <div style={S.card}>
+          <div style={{ background:"#E8EFF6", padding:"12px 20px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <span style={{ fontFamily:"Arial,sans-serif", fontSize:12, fontWeight:"bold", color:"#0D1B2A", letterSpacing:".06em" }}>YOUR ORDER SUMMARY</span>
+            <span style={{ background:"#1a7a3a", color:"#fff", fontFamily:"Arial,sans-serif", fontSize:10, fontWeight:"bold", padding:"3px 10px", borderRadius:999 }}>SAVE 67%</span>
+          </div>
+          <div style={{ padding:"14px 20px", borderBottom:"1px solid #EEE9DE" }}>
+            <p style={{ fontSize:15, fontWeight:"bold", color:"#0D1B2A", marginBottom:8 }}>Metaxon™ Performance System</p>
+            <div style={{ fontFamily:"Arial,sans-serif", fontSize:12, color:"#5A5A68", lineHeight:1.9 }}>
+              {COMPONENTS.map(c=><div key={c.label}>✓ {c.label}</div>)}
             </div>
           </div>
-
-          {/* Trust badges */}
-          <div className="flex items-center justify-center gap-4 mt-5 flex-wrap">
-            <TrustBadge icon="🔒" text="SSL Secured" />
-            <TrustBadge icon="💳" text="Stripe Payments" />
-            <TrustBadge icon="🅿" text="PayPal Accepted" />
-            <TrustBadge icon="🛡" text="30-Day Guarantee" />
+          <div style={{ padding:"12px 20px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontFamily:"Arial,sans-serif", fontSize:13, color:"#5A5A68" }}>
+              <span>Regular price</span><span style={{ textDecoration:"line-through" }}>$297.00</span>
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontFamily:"Arial,sans-serif", fontSize:13, color:"#1a7a3a", fontWeight:"bold" }}>
+              <span>Launch discount</span><span>−$200.00</span>
+            </div>
+            {bumpAdded && (
+              <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontFamily:"Arial,sans-serif", fontSize:13, color:"#1a7a3a", fontWeight:"bold" }}>
+                <span>Deep Sleep Guide (add-on)</span><span>+$47.00</span>
+              </div>
+            )}
+            <div style={{ display:"flex", justifyContent:"space-between", padding:"10px 0 4px", borderTop:"2px solid #EEE9DE", marginTop:8, fontFamily:"Arial,sans-serif", fontSize:17, fontWeight:"bold", color:"#0D1B2A" }}>
+              <span>Total today</span><span>${total}.00</span>
+            </div>
+            <p style={{ fontFamily:"Arial,sans-serif", fontSize:11, color:"#5A5A68", marginTop:4 }}>One-time payment. Lifetime access. No subscription.</p>
           </div>
         </div>
-      </main>
-    </div>
-  );
-}
 
-function TrustBadge({ icon, text }: { icon: string; text: string }) {
-  return (
-    <div className="flex items-center gap-1.5 text-muted">
-      <span className="text-sm">{icon}</span>
-      <span className="text-[11px] font-body tracking-wide">{text}</span>
+        {/* ── ORDER BUMP — preço único, claro, sem "$47+$27" ── */}
+        <div
+          onClick={() => setBumpAdded(p => !p)}
+          style={{ background:bumpAdded?"linear-gradient(135deg,#f0f8f2,#e8f5ec)":"linear-gradient(135deg,#f5fbf7,#eef7f1)", border:`2px solid ${bumpAdded?"#1a7a3a":"#4caf7d"}`, borderRadius:10, padding:20, marginBottom:20, cursor:"pointer", transition:"border-color .2s" }}
+        >
+          <div style={{ display:"flex", alignItems:"flex-start", gap:14 }}>
+            {/* Checkbox */}
+            <div style={{ width:24, height:24, borderRadius:5, border:`2px solid ${bumpAdded?"#1a7a3a":"#4caf7d"}`, background:bumpAdded?"#1a7a3a":"#fff", flexShrink:0, marginTop:2, display:"flex", alignItems:"center", justifyContent:"center", transition:"background .2s" }}>
+              {bumpAdded && <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            </div>
+            <div style={{ flex:1 }}>
+              <span style={{ display:"inline-block", background:"#1a7a3a", color:"#fff", fontFamily:"Arial,sans-serif", fontSize:10, fontWeight:"bold", padding:"3px 10px", borderRadius:999, marginBottom:8, letterSpacing:".06em" }}>
+                ⚠ ADD THIS TO YOUR ORDER — ONE TIME OFFER
+              </span>
+              <h3 style={{ fontSize:15, fontWeight:"bold", color:"#0D1B2A", marginBottom:8, lineHeight:1.35 }}>
+                🌙 Deep Sleep Optimization Guide — Complete System
+              </h3>
+              <p style={{ fontFamily:"Arial,sans-serif", fontSize:13, color:"#444", lineHeight:1.75, marginBottom:10 }}>
+                The Metaxon™ Protocol activates all 4 cognitive levers — but <strong>sleep is when all 4 consolidate.</strong> Without optimized deep sleep, your brain cannot complete the glymphatic clearing cycle that makes the protocol work at full capacity. This guide covers slow-wave and REM optimization, the full wind-down stack, and the sleep pressure protocol from Chapter 5 — fully expanded into a standalone implementation guide.
+              </p>
+              {/* FIXED: preço único claro. Era "$47+$27" confuso. Agora só "Add for $47" */}
+              <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+                <span style={{ fontSize:19, fontWeight:"bold", color:"#1a7a3a", fontFamily:"Arial,sans-serif" }}>Add for $47</span>
+                <span style={{ fontSize:13, color:"rgba(90,90,104,.5)", textDecoration:"line-through", fontFamily:"Arial,sans-serif" }}>$97 separately</span>
+                <span style={{ fontSize:11, color:"#1a7a3a", fontWeight:"bold", fontFamily:"Arial,sans-serif", background:"rgba(26,122,58,.1)", padding:"2px 8px", borderRadius:999 }}>Save $50</span>
+              </div>
+              <p style={{ fontFamily:"Arial,sans-serif", fontSize:11, color:"#5A5A68", marginTop:8 }}>
+                ✓ Instant digital access &nbsp;·&nbsp; ✓ Same 30-day guarantee &nbsp;·&nbsp; ✓ Added to your total above
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* FORM */}
+        <div style={{ background:"#fff", border:"1px solid #EEE9DE", borderRadius:10, padding:"22px 20px", marginBottom:20 }}>
+
+          <div style={S.sectionTitle}>
+            <span>1 — Your Information</span>
+            <div style={{ flex:1, height:1, background:"#EEE9DE" }} />
+          </div>
+
+          <div style={{ marginBottom:14 }}>
+            <label style={S.label}>First Name</label>
+            <input type="text" value={firstName} placeholder="Your first name" autoComplete="given-name"
+              onChange={e=>{setFirstName(e.target.value);setErrors(p=>({...p,name:undefined}));}}
+              style={S.input(!!errors.name)} />
+            {errors.name && <p style={S.errMsg}>{errors.name}</p>}
+          </div>
+
+          <div style={{ marginBottom:20 }}>
+            <label style={S.label}>Email Address</label>
+            <input type="email" value={email} placeholder="you@email.com" autoComplete="email"
+              onChange={e=>{setEmail(e.target.value);setErrors(p=>({...p,email:undefined}));}}
+              style={S.input(!!errors.email)} />
+            {errors.email
+              ? <p style={S.errMsg}>{errors.email}</p>
+              : <p style={S.hint}>🔒 Your access link will be sent here. Check spam if not received within 5 min.</p>
+            }
+          </div>
+
+          <div style={S.sectionTitle}>
+            <span>2 — Payment</span>
+            <div style={{ flex:1, height:1, background:"#EEE9DE" }} />
+          </div>
+
+          {bumpAdded && (
+            <div style={{ background:"rgba(26,122,58,.06)", border:"1px solid rgba(26,122,58,.2)", borderRadius:6, padding:"8px 14px", marginBottom:14, fontFamily:"Arial,sans-serif", fontSize:12, color:"#2a6a3a" }}>
+              ✓ <strong>Deep Sleep Guide added</strong> — $47 included in total
+            </div>
+          )}
+
+          <div style={{ background:"#E8EFF6", borderRadius:6, padding:"14px 16px", marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <span style={{ fontFamily:"Arial,sans-serif", fontSize:11, color:"#5A5A68", display:"block" }}>Order total</span>
+              <span style={{ fontSize:24, fontWeight:"bold", color:"#0D1B2A", fontFamily:"Arial,sans-serif" }}>${total}.00</span>
+            </div>
+            <div style={{ textAlign:"right", fontFamily:"Arial,sans-serif", fontSize:11, color:"#5A5A68" }}>
+              One-time payment<br/>Lifetime access · No subscription
+            </div>
+          </div>
+
+          <button onClick={handleSubmit} disabled={loading} style={S.btn(loading)}>
+            {loading ? "Redirecting…" : "🔓 Unlock My Performance Now →"}
+          </button>
+
+          <p style={{ fontFamily:"Arial,sans-serif", fontSize:12, color:"#5A5A68", textAlign:"center", marginTop:10, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+            🔒 Secure checkout · Takes less than 2 minutes
+          </p>
+
+          <div style={{ display:"flex", gap:8, justifyContent:"center", marginTop:14, flexWrap:"wrap" }}>
+            {["💳 Card","🅿 PayPal","🍎 Apple Pay","G Google Pay"].map(p=>(
+              <span key={p} style={{ background:"#f5f5f5", border:"1px solid #e0e0e0", borderRadius:5, padding:"6px 12px", fontFamily:"Arial,sans-serif", fontSize:12, color:"#555", fontWeight:"bold" }}>{p}</span>
+            ))}
+          </div>
+
+          <p style={{ fontFamily:"Arial,sans-serif", fontSize:11, color:"#5A5A68", textAlign:"center", marginTop:12 }}>
+            We collect only what's necessary. Your data is never sold or shared.
+          </p>
+        </div>
+
+        {/* GUARANTEE */}
+        <div style={{ background:"rgba(26,122,58,.06)", border:"2px solid rgba(26,122,58,.25)", borderRadius:10, padding:"18px 20px", marginBottom:20, display:"flex", alignItems:"flex-start", gap:14 }}>
+          <span style={{ fontSize:32, flexShrink:0 }}>🛡</span>
+          <div style={{ fontFamily:"Arial,sans-serif", fontSize:13, color:"#333", lineHeight:1.7 }}>
+            <strong style={{ color:"#1a7a3a", display:"block", fontSize:14, marginBottom:4 }}>30-Day Money-Back Guarantee</strong>
+            Try the full system for 30 days. If you don't experience a measurable improvement in focus, energy, and cognitive consistency — contact us for a complete refund. No questions, no hassle. Your purchase is fully protected.
+          </div>
+        </div>
+
+        {/* WHAT YOU GET */}
+        <div style={{ background:"#fff", border:"1px solid #EEE9DE", borderRadius:10, padding:"18px 20px", marginBottom:20 }}>
+          <p style={{ fontFamily:"Arial,sans-serif", fontSize:11, fontWeight:"bold", letterSpacing:".12em", textTransform:"uppercase", color:"#1A4A7A", marginBottom:14 }}>
+            What You'll Receive Immediately
+          </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {COMPONENTS.map(({icon,label,detail})=>(
+              <div key={label} style={{ display:"flex", alignItems:"flex-start", gap:10, fontFamily:"Arial,sans-serif", fontSize:13, color:"#333", lineHeight:1.55 }}>
+                <div style={{ width:20, height:20, borderRadius:"50%", background:"#1A4A7A", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1 }}>
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <span><strong>{icon} {label}</strong> — {detail}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* SOCIAL PROOF */}
+        <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:20 }}>
+          {REVIEWS.map(({text,name,role})=>(
+            <div key={name} style={{ background:"#fff", border:"1px solid #EEE9DE", borderRadius:8, padding:"14px 16px" }}>
+              <div style={{ color:"#F5A623", fontSize:13, marginBottom:4 }}>★★★★★</div>
+              <p style={{ fontSize:13, color:"#333", fontStyle:"italic", lineHeight:1.65, marginBottom:8 }}>&ldquo;{text}&rdquo;</p>
+              <span style={{ fontFamily:"Arial,sans-serif", fontSize:12, fontWeight:"bold", color:"#0D1B2A" }}>{name} — {role}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* LEGAL */}
+        <div style={{ fontFamily:"Arial,sans-serif", fontSize:11, color:"rgba(90,90,104,.6)", textAlign:"center", lineHeight:1.8 }}>
+          For educational purposes only. Not medical advice. Individual results may vary.<br/>
+          Consult a healthcare professional before beginning any supplementation program.<br/><br/>
+          <a href="https://nsupplement.com/privacy-policy.html" style={{ color:"#5A5A68" }}>Privacy Policy</a> &nbsp;·&nbsp;
+          <a href="https://nsupplement.com/terms.html" style={{ color:"#5A5A68" }}>Terms of Service</a> &nbsp;·&nbsp;
+          <a href="https://nsupplement.com/disclaimer.html" style={{ color:"#5A5A68" }}>Disclaimer</a> &nbsp;·&nbsp;
+          <a href="mailto:support@nsupplement.com" style={{ color:"#5A5A68" }}>Contact</a><br/><br/>
+          NSupplement LLC · support@nsupplement.com · © 2026
+        </div>
+
+      </div>
     </div>
   );
 }
