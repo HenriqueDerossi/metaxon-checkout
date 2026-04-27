@@ -69,7 +69,7 @@ const TESTIMONIALS = [
   },
 ];
 
-const ORDER_BUMP_PRICE = 47; // FIXED: was 27 — preço correto do add-on
+const ORDER_BUMP_PRICE = 27;
 
 const MAIN_PRICE = 97;
 
@@ -83,16 +83,10 @@ export default function CheckoutPage() {
   const [countdown, setCountdown] = useState("23:59:59");
   const [loading, setLoading]       = useState(false);
   const [error,   setError]         = useState<string | null>(null);
-  const [showSticky, setShowSticky] = useState(false);
+  const [showSticky] = useState(true);
   const formRef = useRef<HTMLDivElement>(null);
 
   const total = MAIN_PRICE + (orderBump ? ORDER_BUMP_PRICE : 0);
-
-  useEffect(() => {
-    const onScroll = () => setShowSticky(window.scrollY > 300);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -293,22 +287,15 @@ export default function CheckoutPage() {
                 style={{ width: "100%", height: "auto", display: "block" }}
               />
             </div>
-            <ul className="space-y-3">
-              {BENEFITS.map((b, i) => (
-                <li key={i} style={{
-                  display: "flex", gap: "14px", alignItems: "flex-start",
-                  background: "rgba(255,255,255,0.03)", border: "1px solid rgba(176,138,58,0.12)",
-                  borderLeft: "3px solid rgba(176,138,58,0.4)", padding: "12px 14px", borderRadius: "4px",
-                }}>
-                  <span style={{ fontSize: "20px", flexShrink: 0, marginTop: "1px" }}>{b.icon}</span>
-                  <div>
-                    <span style={{ fontSize: "9px", letterSpacing: "0.16em", textTransform: "uppercase", color: "#B08A3A", fontFamily: "system-ui", display: "block", marginBottom: "2px" }}>{b.label}</span>
-                    <span style={{ fontSize: "13px", fontWeight: "bold", color: "#fff", fontFamily: "system-ui", display: "block", marginBottom: "3px" }}>{b.text}</span>
-                    <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", fontFamily: "system-ui", lineHeight: "1.5" }}>{b.sub}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <img
+              src="/mockup-full.png"
+              alt="Metaxon™ System — 6 complete components: Scientific Manual, Compounds Guide, 30-Day Protocol, Daily Checklist, Circadian Map and Neuroplasticity Framework"
+              loading="eager"
+              decoding="async"
+              width="1340"
+              height="754"
+              style={{ width: "100%", height: "auto", display: "block", borderRadius: "8px" }}
+            />
           </div>
 
           <div className="gold-divider" />
