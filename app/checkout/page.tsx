@@ -106,7 +106,7 @@ export default function CheckoutPage() {
           <span style={{ display:"block", fontSize:10, letterSpacing:".15em", textTransform:"uppercase" as const, color:"rgba(255,255,255,.4)", fontFamily:"Arial,sans-serif", marginBottom:2 }}>Today Only</span>
           <span style={{ fontFamily:"Arial,sans-serif" }}>
             <span style={{ fontSize:12, textDecoration:"line-through", color:"rgba(255,255,255,.3)", marginRight:6 }}>$297</span>
-            <span style={{ fontSize:16, fontWeight:"bold", color:"#B08A3A" }}>$97</span>
+            <span style={{ fontSize:16, fontWeight:"bold", color:"#B08A3A" }}>${total}</span>
           </span>
         </div>
         <button
@@ -326,7 +326,7 @@ export default function CheckoutPage() {
         {/* WHAT YOU GET */}
         <div style={{ background:"#fff", border:"1px solid #EEE9DE", borderRadius:10, overflow:"hidden", marginBottom:20 }}>
           <img
-            src="/mockup-full.png"
+            src="/mockup-components.webp"
             alt="Metaxon™ System — 6 complete components: Scientific Manual, Compounds Guide, 30-Day Protocol, Daily Checklist, Circadian Map and Neuroplasticity Framework"
             loading="eager"
             decoding="async"
