@@ -28,6 +28,7 @@ function useNoonCountdown() {
 const BUMP_PRICE = 27;
 const MAIN_PRICE = 97;
 const BUMP_REGULAR = 47; // preço normal do bump (para mostrar o strike)
+const MAIN_REGULAR = 297; // preço normal do produto principal
 
 const COMPONENTS = [
   { icon: "📖", label: "Metaxon™ Scientific Manual", detail: "7-chapter eBook · dosage tables · 20+ peer-reviewed references" },
@@ -52,9 +53,12 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
   const countdown = useNoonCountdown();
 
-  // ✅ FIX: preços centralizados nas constantes acima — zero risco de inconsistência
-  const total = bumpAdded ? MAIN_PRICE + BUMP_PRICE : MAIN_PRICE;
-  const bumpSavings = BUMP_REGULAR - BUMP_PRICE; // $47 - $27 = $20
+  // ✅ preços centralizados nas constantes acima — zero risco de inconsistência
+  const total        = bumpAdded ? MAIN_PRICE + BUMP_PRICE : MAIN_PRICE;
+  const bumpSavings  = BUMP_REGULAR - BUMP_PRICE;                          // $47 - $27 = $20
+  // ✅ NOVO: preço regular e desconto totais — atualizam com o bump
+  const regularPrice = bumpAdded ? MAIN_REGULAR + BUMP_REGULAR : MAIN_REGULAR; // $297 ou $344
+  const totalDiscount = regularPrice - total;                                    // $200 ou $220
 
   function validate() {
     const e: { name?: string; email?: string } = {};
@@ -112,8 +116,8 @@ export default function CheckoutPage() {
         <div style={{ textAlign:"center", flexShrink:0 }}>
           <span style={{ display:"block", fontSize:10, letterSpacing:".15em", textTransform:"uppercase" as const, color:"rgba(255,255,255,.4)", fontFamily:"Arial,sans-serif", marginBottom:2 }}>Today Only</span>
           <span style={{ fontFamily:"Arial,sans-serif" }}>
-            <span style={{ fontSize:12, textDecoration:"line-through", color:"rgba(255,255,255,.3)", marginRight:6 }}>$297</span>
-            {/* ✅ FIX: usa `total` para refletir o bump quando adicionado */}
+            {/* ✅ riscado atualiza: $297 sem bump, $344 com bump */}
+            <span style={{ fontSize:12, textDecoration:"line-through", color:"rgba(255,255,255,.3)", marginRight:6 }}>${regularPrice}</span>
             <span style={{ fontSize:16, fontWeight:"bold", color:"#B08A3A" }}>${total}</span>
           </span>
         </div>
@@ -200,6 +204,7 @@ export default function CheckoutPage() {
         <div style={S.card}>
           <div style={{ background:"#E8EFF6", padding:"12px 20px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <span style={{ fontFamily:"Arial,sans-serif", fontSize:12, fontWeight:"bold", color:"#0D1B2A", letterSpacing:".06em" }}>YOUR ORDER SUMMARY</span>
+            {/* ✅ SAVE badge fixo em 67% conforme solicitado */}
             <span style={{ background:"#1a7a3a", color:"#fff", fontFamily:"Arial,sans-serif", fontSize:10, fontWeight:"bold", padding:"3px 10px", borderRadius:999 }}>SAVE 67%</span>
           </div>
           <div style={{ padding:"14px 20px", borderBottom:"1px solid #EEE9DE" }}>
@@ -209,13 +214,14 @@ export default function CheckoutPage() {
             </div>
           </div>
           <div style={{ padding:"12px 20px" }}>
+            {/* ✅ Regular price: $297 sem bump, $344 com bump */}
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontFamily:"Arial,sans-serif", fontSize:13, color:"#5A5A68" }}>
-              <span>Regular price</span><span style={{ textDecoration:"line-through" }}>$297.00</span>
+              <span>Regular price</span><span style={{ textDecoration:"line-through" }}>${regularPrice}.00</span>
             </div>
+            {/* ✅ Launch discount: −$200 sem bump, −$220 com bump */}
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontFamily:"Arial,sans-serif", fontSize:13, color:"#1a7a3a", fontWeight:"bold" }}>
-              <span>Launch discount</span><span>−$200.00</span>
+              <span>Launch discount</span><span>−${totalDiscount}.00</span>
             </div>
-            {/* ✅ FIX: bump price vem da constante BUMP_PRICE */}
             {bumpAdded && (
               <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontFamily:"Arial,sans-serif", fontSize:13, color:"#1a7a3a", fontWeight:"bold" }}>
                 <span>Deep Sleep Guide (add-on)</span><span>+${BUMP_PRICE}.00</span>
@@ -258,16 +264,13 @@ export default function CheckoutPage() {
                 The Metaxon™ Protocol activates all 4 cognitive levers — but <strong>sleep is when all 4 consolidate.</strong> Without optimized deep sleep, your brain cannot complete the glymphatic clearing cycle that makes the protocol work at full capacity.
                 This guide covers slow-wave and REM optimization, the full wind-down stack, and the sleep pressure protocol from Chapter 5 — fully expanded into a standalone implementation guide.
               </p>
-
               <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-                {/* ✅ FIX: "Add for $27" com strike "$47" — savings correto: $20 */}
                 <span style={{ fontSize:19, fontWeight:"bold", color:"#1a7a3a", fontFamily:"Arial,sans-serif" }}>
                   Add for ${BUMP_PRICE}
                 </span>
                 <span style={{ fontSize:13, color:"rgba(90,90,104,.5)", textDecoration:"line-through", fontFamily:"Arial,sans-serif" }}>
                   ${BUMP_REGULAR} separately
                 </span>
-                {/* ✅ FIX: era "Save $50" — cálculo correto é $47 - $27 = $20 */}
                 <span style={{ fontSize:11, color:"#1a7a3a", fontWeight:"bold", fontFamily:"Arial,sans-serif", background:"rgba(26,122,58,.1)", padding:"2px 8px", borderRadius:999 }}>
                   Save ${bumpSavings}
                 </span>
