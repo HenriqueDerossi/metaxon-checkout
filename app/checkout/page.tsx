@@ -27,8 +27,8 @@ function useNoonCountdown() {
 
 const BUMP_PRICE = 27;
 const MAIN_PRICE = 97;
-const BUMP_REGULAR = 47; // preço normal do bump (para mostrar o strike)
-const MAIN_REGULAR = 297; // preço normal do produto principal
+const BUMP_REGULAR = 47;
+const MAIN_REGULAR = 297;
 
 const COMPONENTS = [
   { icon: "📖", label: "Metaxon™ Scientific Manual", detail: "7-chapter eBook · dosage tables · 20+ peer-reviewed references" },
@@ -53,12 +53,10 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
   const countdown = useNoonCountdown();
 
-  // ✅ preços centralizados nas constantes acima — zero risco de inconsistência
   const total        = bumpAdded ? MAIN_PRICE + BUMP_PRICE : MAIN_PRICE;
-  const bumpSavings  = BUMP_REGULAR - BUMP_PRICE;                          // $47 - $27 = $20
-  // ✅ NOVO: preço regular e desconto totais — atualizam com o bump
-  const regularPrice = bumpAdded ? MAIN_REGULAR + BUMP_REGULAR : MAIN_REGULAR; // $297 ou $344
-  const totalDiscount = regularPrice - total;                                    // $200 ou $220
+  const bumpSavings  = BUMP_REGULAR - BUMP_PRICE;
+  const regularPrice = bumpAdded ? MAIN_REGULAR + BUMP_REGULAR : MAIN_REGULAR;
+  const totalDiscount = regularPrice - total;
 
   function validate() {
     const e: { name?: string; email?: string } = {};
@@ -78,10 +76,9 @@ export default function CheckoutPage() {
         content_name: bumpAdded ? "Metaxon Protocol + Sleep Guide" : "Metaxon Protocol",
       });
     }
-    // ⚠️ Substitua pelos seus links reais do Stripe
     const url = bumpAdded
-      ? "https://buy.stripe.com/REPLACE_BUMP_LINK"
-      : "https://buy.stripe.com/REPLACE_MAIN_LINK";
+      ? "https://buy.stripe.com/eVq6oI1B71Ho0h5cta2B201"
+      : "https://buy.stripe.com/8x214o5Rnfye0h52SA2B200";
     window.location.href = url;
   }
 
@@ -102,7 +99,7 @@ export default function CheckoutPage() {
   return (
     <div style={S.page}>
 
-      {/* ── STICKY FOOTER CTA — always visible, price updates with bump ── */}
+      {/* STICKY FOOTER */}
       <div style={{
         position:"fixed", bottom:0, left:0, right:0, zIndex:999,
         padding:"10px 20px",
@@ -116,13 +113,12 @@ export default function CheckoutPage() {
         <div style={{ textAlign:"center", flexShrink:0 }}>
           <span style={{ display:"block", fontSize:10, letterSpacing:".15em", textTransform:"uppercase" as const, color:"rgba(255,255,255,.4)", fontFamily:"Arial,sans-serif", marginBottom:2 }}>Today Only</span>
           <span style={{ fontFamily:"Arial,sans-serif" }}>
-            {/* ✅ riscado atualiza: $297 sem bump, $344 com bump */}
             <span style={{ fontSize:12, textDecoration:"line-through", color:"rgba(255,255,255,.3)", marginRight:6 }}>${regularPrice}</span>
             <span style={{ fontSize:16, fontWeight:"bold", color:"#B08A3A" }}>${total}</span>
           </span>
         </div>
         <button
-          onClick={() => document.getElementById("co-email")?.focus()}
+          onClick={handleSubmit}
           style={{ background:"linear-gradient(135deg,#B08A3A,#D4AA60)", color:"#0a1218", fontFamily:"Arial,sans-serif", fontSize:14, fontWeight:"bold", letterSpacing:".04em", padding:"12px 32px", border:"none", cursor:"pointer", flex:1, maxWidth:340, transition:"opacity .2s", borderRadius:4 }}
           onMouseOver={e=>(e.currentTarget.style.opacity=".88")}
           onMouseOut={e=>(e.currentTarget.style.opacity="1")}
@@ -204,7 +200,6 @@ export default function CheckoutPage() {
         <div style={S.card}>
           <div style={{ background:"#E8EFF6", padding:"12px 20px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <span style={{ fontFamily:"Arial,sans-serif", fontSize:12, fontWeight:"bold", color:"#0D1B2A", letterSpacing:".06em" }}>YOUR ORDER SUMMARY</span>
-            {/* ✅ SAVE badge fixo em 67% conforme solicitado */}
             <span style={{ background:"#1a7a3a", color:"#fff", fontFamily:"Arial,sans-serif", fontSize:10, fontWeight:"bold", padding:"3px 10px", borderRadius:999 }}>SAVE 67%</span>
           </div>
           <div style={{ padding:"14px 20px", borderBottom:"1px solid #EEE9DE" }}>
@@ -214,11 +209,9 @@ export default function CheckoutPage() {
             </div>
           </div>
           <div style={{ padding:"12px 20px" }}>
-            {/* ✅ Regular price: $297 sem bump, $344 com bump */}
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontFamily:"Arial,sans-serif", fontSize:13, color:"#5A5A68" }}>
               <span>Regular price</span><span style={{ textDecoration:"line-through" }}>${regularPrice}.00</span>
             </div>
-            {/* ✅ Launch discount: −$200 sem bump, −$220 com bump */}
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontFamily:"Arial,sans-serif", fontSize:13, color:"#1a7a3a", fontWeight:"bold" }}>
               <span>Launch discount</span><span>−${totalDiscount}.00</span>
             </div>
@@ -234,7 +227,7 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* ── ORDER BUMP ── */}
+        {/* ORDER BUMP */}
         <div
           onClick={() => setBumpAdded(p => !p)}
           style={{
@@ -245,7 +238,6 @@ export default function CheckoutPage() {
           }}
         >
           <div style={{ display:"flex", alignItems:"flex-start", gap:14 }}>
-            {/* Checkbox */}
             <div style={{ width:24, height:24, borderRadius:5, border:`2px solid ${bumpAdded?"#1a7a3a":"#4caf7d"}`, background:bumpAdded?"#1a7a3a":"#fff", flexShrink:0, marginTop:2, display:"flex", alignItems:"center", justifyContent:"center", transition:"background .2s" }}>
               {bumpAdded && (
                 <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
@@ -284,12 +276,10 @@ export default function CheckoutPage() {
 
         {/* FORM */}
         <div style={{ background:"#fff", border:"1px solid #EEE9DE", borderRadius:10, padding:"22px 20px", marginBottom:20 }}>
-
           <div style={S.sectionTitle}>
             <span>1 — Your Information</span>
             <div style={{ flex:1, height:1, background:"#EEE9DE" }} />
           </div>
-
           <div style={{ marginBottom:14 }}>
             <label style={S.label}>First Name</label>
             <input
@@ -302,7 +292,6 @@ export default function CheckoutPage() {
             />
             {errors.name && <p style={S.errMsg}>{errors.name}</p>}
           </div>
-
           <div style={{ marginBottom:20 }}>
             <label style={S.label}>Email Address</label>
             <input
@@ -319,19 +308,15 @@ export default function CheckoutPage() {
               : <p style={S.hint}>🔒 Your access link will be sent here. Check spam if not received within 5 min.</p>
             }
           </div>
-
           <div style={S.sectionTitle}>
             <span>2 — Payment</span>
             <div style={{ flex:1, height:1, background:"#EEE9DE" }} />
           </div>
-
           {bumpAdded && (
             <div style={{ background:"rgba(26,122,58,.06)", border:"1px solid rgba(26,122,58,.2)", borderRadius:6, padding:"8px 14px", marginBottom:14, fontFamily:"Arial,sans-serif", fontSize:12, color:"#2a6a3a" }}>
               ✓ <strong>Deep Sleep Guide added</strong> — ${BUMP_PRICE} included in total
             </div>
           )}
-
-          {/* Total display */}
           <div style={{ background:"#E8EFF6", borderRadius:6, padding:"14px 16px", marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
               <span style={{ fontFamily:"Arial,sans-serif", fontSize:11, color:"#5A5A68", display:"block" }}>Order total</span>
@@ -341,21 +326,17 @@ export default function CheckoutPage() {
               One-time payment<br/>Lifetime access · No subscription
             </div>
           </div>
-
           <button onClick={handleSubmit} disabled={loading} style={S.btn(loading)}>
             {loading ? "Redirecting…" : "🔓 Unlock My Performance Now →"}
           </button>
-
           <p style={{ fontFamily:"Arial,sans-serif", fontSize:12, color:"#5A5A68", textAlign:"center", marginTop:10, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
             🔒 Secure checkout · Takes less than 2 minutes
           </p>
-
           <div style={{ display:"flex", gap:8, justifyContent:"center", marginTop:14, flexWrap:"wrap" }}>
             {["💳 Card", "🅿 PayPal", "🍎 Apple Pay", "G Google Pay"].map(p => (
               <span key={p} style={{ background:"#f5f5f5", border:"1px solid #e0e0e0", borderRadius:5, padding:"6px 12px", fontFamily:"Arial,sans-serif", fontSize:12, color:"#555", fontWeight:"bold" }}>{p}</span>
             ))}
           </div>
-
           <p style={{ fontFamily:"Arial,sans-serif", fontSize:11, color:"#5A5A68", textAlign:"center", marginTop:12 }}>
             We collect only what's necessary. Your data is never sold or shared.
           </p>
@@ -374,7 +355,7 @@ export default function CheckoutPage() {
         <div style={{ background:"#fff", border:"1px solid #EEE9DE", borderRadius:10, overflow:"hidden", marginBottom:20 }}>
           <img
             src="/mockup-components.webp"
-            alt="Metaxon™ System — 6 complete components: Scientific Manual, Compounds Guide, 30-Day Protocol, Daily Checklist, Circadian Map and Neuroplasticity Framework"
+            alt="Metaxon™ System — 6 complete components"
             loading="eager"
             decoding="async"
             width="1340"
