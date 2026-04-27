@@ -118,7 +118,15 @@ export default function CheckoutPage() {
           </span>
         </div>
         <button
-          onClick={handleSubmit}
+          onClick={() => {
+            const form = document.getElementById("co-email");
+            if (form) {
+              form.scrollIntoView({ behavior: "smooth", block: "center" });
+              setTimeout(() => { handleSubmit(); }, 400);
+            } else {
+              handleSubmit();
+            }
+          }}
           style={{ background:"linear-gradient(135deg,#B08A3A,#D4AA60)", color:"#0a1218", fontFamily:"Arial,sans-serif", fontSize:14, fontWeight:"bold", letterSpacing:".04em", padding:"12px 32px", border:"none", cursor:"pointer", flex:1, maxWidth:340, transition:"opacity .2s", borderRadius:4 }}
           onMouseOver={e=>(e.currentTarget.style.opacity=".88")}
           onMouseOut={e=>(e.currentTarget.style.opacity="1")}
