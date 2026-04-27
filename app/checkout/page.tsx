@@ -25,6 +25,10 @@ function useNoonCountdown() {
   return timeStr;
 }
 
+const BUMP_PRICE = 27;
+const MAIN_PRICE = 97;
+const BUMP_REGULAR = 47; // preço normal do bump (para mostrar o strike)
+
 const COMPONENTS = [
   { icon: "📖", label: "Metaxon™ Scientific Manual", detail: "7-chapter eBook · dosage tables · 20+ peer-reviewed references" },
   { icon: "🧬", label: "Neurofunctional Compounds Guide", detail: "17 bioactive compounds · mechanism · optimal timing" },
@@ -47,7 +51,10 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
   const countdown = useNoonCountdown();
-  const total = bumpAdded ? 124 : 97;
+
+  // ✅ FIX: preços centralizados nas constantes acima — zero risco de inconsistência
+  const total = bumpAdded ? MAIN_PRICE + BUMP_PRICE : MAIN_PRICE;
+  const bumpSavings = BUMP_REGULAR - BUMP_PRICE; // $47 - $27 = $20
 
   function validate() {
     const e: { name?: string; email?: string } = {};
@@ -91,7 +98,7 @@ export default function CheckoutPage() {
   return (
     <div style={S.page}>
 
-      {/* ── STICKY FOOTER CTA — always visible ── */}
+      {/* ── STICKY FOOTER CTA — always visible, price updates with bump ── */}
       <div style={{
         position:"fixed", bottom:0, left:0, right:0, zIndex:999,
         padding:"10px 20px",
@@ -106,6 +113,7 @@ export default function CheckoutPage() {
           <span style={{ display:"block", fontSize:10, letterSpacing:".15em", textTransform:"uppercase" as const, color:"rgba(255,255,255,.4)", fontFamily:"Arial,sans-serif", marginBottom:2 }}>Today Only</span>
           <span style={{ fontFamily:"Arial,sans-serif" }}>
             <span style={{ fontSize:12, textDecoration:"line-through", color:"rgba(255,255,255,.3)", marginRight:6 }}>$297</span>
+            {/* ✅ FIX: usa `total` para refletir o bump quando adicionado */}
             <span style={{ fontSize:16, fontWeight:"bold", color:"#B08A3A" }}>${total}</span>
           </span>
         </div>
@@ -169,12 +177,17 @@ export default function CheckoutPage() {
         <div style={{ background:"#0D1B2A", display:"flex", alignItems:"center", justifyContent:"center", gap:14, padding:"12px 20px", marginBottom:20, borderRadius:6, flexWrap:"wrap" }}>
           <span style={{ fontFamily:"Arial,sans-serif", fontSize:11, color:"rgba(255,255,255,.5)", letterSpacing:".08em" }}>LAUNCH PRICE EXPIRES IN</span>
           <span style={{ fontFamily:"monospace", fontSize:20, fontWeight:"bold", color:"#fff", letterSpacing:".1em" }}>{countdown}</span>
-          <span style={{ fontFamily:"Arial,sans-serif", fontSize:13, color:"#D4AA60", fontWeight:"bold" }}>$97 (reg. $297)</span>
+          <span style={{ fontFamily:"Arial,sans-serif", fontSize:13, color:"#D4AA60", fontWeight:"bold" }}>${MAIN_PRICE} (reg. $297)</span>
         </div>
 
         {/* TRUST STRIP */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:20 }}>
-          {[{icon:"🔒",t:"256-bit SSL",s:"Encrypted"},{icon:"💳",t:"Stripe",s:"Card · Apple Pay"},{icon:"🅿",t:"PayPal",s:"Accepted"},{icon:"🛡",t:"30-Day Guarantee",s:"Full refund"}].map(({icon,t,s})=>(
+          {[
+            {icon:"🔒", t:"256-bit SSL",      s:"Encrypted"},
+            {icon:"💳", t:"Stripe",            s:"Card · Apple Pay"},
+            {icon:"🅿", t:"PayPal",            s:"Accepted"},
+            {icon:"🛡", t:"30-Day Guarantee",  s:"Full refund"},
+          ].map(({icon,t,s})=>(
             <div key={t} style={{ background:"#fff", border:"1px solid #EEE9DE", borderRadius:8, padding:"10px 8px", textAlign:"center" }}>
               <div style={{ fontSize:20, marginBottom:3 }}>{icon}</div>
               <span style={{ fontFamily:"Arial,sans-serif", fontSize:11, fontWeight:"bold", color:"#0D1B2A", display:"block" }}>{t}</span>
@@ -202,9 +215,10 @@ export default function CheckoutPage() {
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontFamily:"Arial,sans-serif", fontSize:13, color:"#1a7a3a", fontWeight:"bold" }}>
               <span>Launch discount</span><span>−$200.00</span>
             </div>
+            {/* ✅ FIX: bump price vem da constante BUMP_PRICE */}
             {bumpAdded && (
               <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontFamily:"Arial,sans-serif", fontSize:13, color:"#1a7a3a", fontWeight:"bold" }}>
-                <span>Deep Sleep Guide (add-on)</span><span>+$27.00</span>
+                <span>Deep Sleep Guide (add-on)</span><span>+${BUMP_PRICE}.00</span>
               </div>
             )}
             <div style={{ display:"flex", justifyContent:"space-between", padding:"10px 0 4px", borderTop:"2px solid #EEE9DE", marginTop:8, fontFamily:"Arial,sans-serif", fontSize:17, fontWeight:"bold", color:"#0D1B2A" }}>
@@ -214,15 +228,24 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* ── ORDER BUMP — preço único, claro, sem "$47+$27" ── */}
+        {/* ── ORDER BUMP ── */}
         <div
           onClick={() => setBumpAdded(p => !p)}
-          style={{ background:bumpAdded?"linear-gradient(135deg,#f0f8f2,#e8f5ec)":"linear-gradient(135deg,#f5fbf7,#eef7f1)", border:`2px solid ${bumpAdded?"#1a7a3a":"#4caf7d"}`, borderRadius:10, padding:20, marginBottom:20, cursor:"pointer", transition:"border-color .2s" }}
+          style={{
+            background: bumpAdded ? "linear-gradient(135deg,#f0f8f2,#e8f5ec)" : "linear-gradient(135deg,#f5fbf7,#eef7f1)",
+            border: `2px solid ${bumpAdded ? "#1a7a3a" : "#4caf7d"}`,
+            borderRadius:10, padding:20, marginBottom:20,
+            cursor:"pointer", transition:"border-color .2s",
+          }}
         >
           <div style={{ display:"flex", alignItems:"flex-start", gap:14 }}>
             {/* Checkbox */}
             <div style={{ width:24, height:24, borderRadius:5, border:`2px solid ${bumpAdded?"#1a7a3a":"#4caf7d"}`, background:bumpAdded?"#1a7a3a":"#fff", flexShrink:0, marginTop:2, display:"flex", alignItems:"center", justifyContent:"center", transition:"background .2s" }}>
-              {bumpAdded && <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              {bumpAdded && (
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                  <path d="M2 7l4 4 6-6" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
             </div>
             <div style={{ flex:1 }}>
               <span style={{ display:"inline-block", background:"#1a7a3a", color:"#fff", fontFamily:"Arial,sans-serif", fontSize:10, fontWeight:"bold", padding:"3px 10px", borderRadius:999, marginBottom:8, letterSpacing:".06em" }}>
@@ -232,13 +255,22 @@ export default function CheckoutPage() {
                 🌙 Deep Sleep Optimization Guide — Complete System
               </h3>
               <p style={{ fontFamily:"Arial,sans-serif", fontSize:13, color:"#444", lineHeight:1.75, marginBottom:10 }}>
-                The Metaxon™ Protocol activates all 4 cognitive levers — but <strong>sleep is when all 4 consolidate.</strong> Without optimized deep sleep, your brain cannot complete the glymphatic clearing cycle that makes the protocol work at full capacity. This guide covers slow-wave and REM optimization, the full wind-down stack, and the sleep pressure protocol from Chapter 5 — fully expanded into a standalone implementation guide.
+                The Metaxon™ Protocol activates all 4 cognitive levers — but <strong>sleep is when all 4 consolidate.</strong> Without optimized deep sleep, your brain cannot complete the glymphatic clearing cycle that makes the protocol work at full capacity.
+                This guide covers slow-wave and REM optimization, the full wind-down stack, and the sleep pressure protocol from Chapter 5 — fully expanded into a standalone implementation guide.
               </p>
-              
+
               <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-                <span style={{ fontSize:19, fontWeight:"bold", color:"#1a7a3a", fontFamily:"Arial,sans-serif" }}>Add for $27</span>
-                <span style={{ fontSize:13, color:"rgba(90,90,104,.5)", textDecoration:"line-through", fontFamily:"Arial,sans-serif" }}>$47 separately</span>
-                <span style={{ fontSize:11, color:"#1a7a3a", fontWeight:"bold", fontFamily:"Arial,sans-serif", background:"rgba(26,122,58,.1)", padding:"2px 8px", borderRadius:999 }}>Save $50</span>
+                {/* ✅ FIX: "Add for $27" com strike "$47" — savings correto: $20 */}
+                <span style={{ fontSize:19, fontWeight:"bold", color:"#1a7a3a", fontFamily:"Arial,sans-serif" }}>
+                  Add for ${BUMP_PRICE}
+                </span>
+                <span style={{ fontSize:13, color:"rgba(90,90,104,.5)", textDecoration:"line-through", fontFamily:"Arial,sans-serif" }}>
+                  ${BUMP_REGULAR} separately
+                </span>
+                {/* ✅ FIX: era "Save $50" — cálculo correto é $47 - $27 = $20 */}
+                <span style={{ fontSize:11, color:"#1a7a3a", fontWeight:"bold", fontFamily:"Arial,sans-serif", background:"rgba(26,122,58,.1)", padding:"2px 8px", borderRadius:999 }}>
+                  Save ${bumpSavings}
+                </span>
               </div>
               <p style={{ fontFamily:"Arial,sans-serif", fontSize:11, color:"#5A5A68", marginTop:8 }}>
                 ✓ Instant digital access &nbsp;·&nbsp; ✓ Same 30-day guarantee &nbsp;·&nbsp; ✓ Added to your total above
@@ -257,17 +289,28 @@ export default function CheckoutPage() {
 
           <div style={{ marginBottom:14 }}>
             <label style={S.label}>First Name</label>
-            <input type="text" value={firstName} placeholder="Your first name" autoComplete="given-name"
-              onChange={e=>{setFirstName(e.target.value);setErrors(p=>({...p,name:undefined}));}}
-              style={S.input(!!errors.name)} />
+            <input
+              type="text"
+              value={firstName}
+              placeholder="Your first name"
+              autoComplete="given-name"
+              onChange={e => { setFirstName(e.target.value); setErrors(p => ({...p, name:undefined})); }}
+              style={S.input(!!errors.name)}
+            />
             {errors.name && <p style={S.errMsg}>{errors.name}</p>}
           </div>
 
           <div style={{ marginBottom:20 }}>
             <label style={S.label}>Email Address</label>
-            <input type="email" value={email} placeholder="you@email.com" autoComplete="email" id="co-email"
-              onChange={e=>{setEmail(e.target.value);setErrors(p=>({...p,email:undefined}));}}
-              style={S.input(!!errors.email)} />
+            <input
+              type="email"
+              id="co-email"
+              value={email}
+              placeholder="you@email.com"
+              autoComplete="email"
+              onChange={e => { setEmail(e.target.value); setErrors(p => ({...p, email:undefined})); }}
+              style={S.input(!!errors.email)}
+            />
             {errors.email
               ? <p style={S.errMsg}>{errors.email}</p>
               : <p style={S.hint}>🔒 Your access link will be sent here. Check spam if not received within 5 min.</p>
@@ -281,10 +324,11 @@ export default function CheckoutPage() {
 
           {bumpAdded && (
             <div style={{ background:"rgba(26,122,58,.06)", border:"1px solid rgba(26,122,58,.2)", borderRadius:6, padding:"8px 14px", marginBottom:14, fontFamily:"Arial,sans-serif", fontSize:12, color:"#2a6a3a" }}>
-              ✓ <strong>Deep Sleep Guide added</strong> — $27 included in total
+              ✓ <strong>Deep Sleep Guide added</strong> — ${BUMP_PRICE} included in total
             </div>
           )}
 
+          {/* Total display */}
           <div style={{ background:"#E8EFF6", borderRadius:6, padding:"14px 16px", marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
               <span style={{ fontFamily:"Arial,sans-serif", fontSize:11, color:"#5A5A68", display:"block" }}>Order total</span>
@@ -304,7 +348,7 @@ export default function CheckoutPage() {
           </p>
 
           <div style={{ display:"flex", gap:8, justifyContent:"center", marginTop:14, flexWrap:"wrap" }}>
-            {["💳 Card","🅿 PayPal","🍎 Apple Pay","G Google Pay"].map(p=>(
+            {["💳 Card", "🅿 PayPal", "🍎 Apple Pay", "G Google Pay"].map(p => (
               <span key={p} style={{ background:"#f5f5f5", border:"1px solid #e0e0e0", borderRadius:5, padding:"6px 12px", fontFamily:"Arial,sans-serif", fontSize:12, color:"#555", fontWeight:"bold" }}>{p}</span>
             ))}
           </div>
@@ -338,7 +382,7 @@ export default function CheckoutPage() {
 
         {/* SOCIAL PROOF */}
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:20 }}>
-          {REVIEWS.map(({text,name,role})=>(
+          {REVIEWS.map(({text, name, role}) => (
             <div key={name} style={{ background:"#fff", border:"1px solid #EEE9DE", borderRadius:8, padding:"14px 16px" }}>
               <div style={{ color:"#F5A623", fontSize:13, marginBottom:4 }}>★★★★★</div>
               <p style={{ fontSize:13, color:"#333", fontStyle:"italic", lineHeight:1.65, marginBottom:8 }}>&ldquo;{text}&rdquo;</p>
